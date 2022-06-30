@@ -2,6 +2,7 @@ asgiref==3.5.2
 beautifulsoup4==4.11.1
 Django==4.0.5
 django-bootstrap-v5==1.0.11
+django-environ==0.9.0
 djangotoolbox==1.8.0
 fontawesome-free==5.15.4
 soupsieve==2.3.2.post1
