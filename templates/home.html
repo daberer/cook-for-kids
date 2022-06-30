@@ -1,10 +1,13 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends 'base.html' %}
 
-<h1>Hello World!</h1>
-<p>Welcome to my first Django project and this is the file!</p>
-<a href="/start">start brewing</a>
+{% block title %}Home{% endblock %}
 
-</body>
-</html>
+{% block content %}
+{% if user.is_authenticated %}
+  Hi {{ user.username }}!
+  <p><a href="{% url 'logout' %}">Log Out</a></p>
+{% else %}
+  <p>You are not logged in</p>
+  <a href="{% url 'login' %}">Log In</a>
+{% endif %}
+{% endblock %}
