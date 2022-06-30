@@ -48,8 +48,6 @@ INSTALLED_APPS = [
     'bootstrap5',
     'fontawesome_5',
     'kochlischda',
-    'crispy_forms',
-    'crispy_bootstrap5',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
