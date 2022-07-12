@@ -1,7 +1,7 @@
 
 import calendar
 import datetime
-from models import Kid
+from .models import Kid
 
 def calculate_month():
     # initializing the year and month
