@@ -1,3 +1,4 @@
+from datetime import datetime
 from operator import mod
 from django.db import models
 
@@ -28,7 +29,10 @@ class Dish(models.Model):
 
 
 class Holiday(models.Model):
-    date = models.DateTimeField()
-    text = models.CharField(max_length=30)
+    date = models.DateField()
+    text = models.CharField(max_length=30, default=str(datetime.now().date()))
+
+    def __str__(self):
+        return self.text
 
 
