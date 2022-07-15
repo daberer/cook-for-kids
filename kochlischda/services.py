@@ -4,7 +4,30 @@ import datetime
 from .models import Kid, Holiday
 import random
 
+def evaluate_result(result: dict) -> int:
+    score = 0
+    # sequences
+    li = list(result.values())
+    for i, l in enumerate(li):
+        if i == 0:
+            continue
+        if i > 3:
+            if li[i-4] == l:
+                score += 1
+        if i > 2:
+            if li[i-3] == l:
+                score += 5
+        if i > 1:
+            if li[i-2] == l:
+                score += 10
+        if i > 0:
+            if li[i-1] == l:
+                score += 50
+    return score
+            
 
+
+    print('hey')
 
 def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
     """
@@ -21,6 +44,9 @@ def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
     else:
         c_dict[c_key] -= 1
     return c_dict
+
+
+
 
 
 def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: dict) -> list:
@@ -57,7 +83,6 @@ def calculate_month():
     kids_dict = {k.name:k.monthly_dishes for k in kids}
 
     def go_cooking():
-        print('comming through')
         for key in result_dict:
             if result_dict[key] == '':
                 potenial_cooks = find_potential_cooks(key, block_dict, kids_dict)
@@ -86,9 +111,13 @@ def calculate_month():
     if not go_cooking():
         print('No solution possible')
     else:
-
         print('success')
-    #TODO: write recursive and randomised function that assigns the days to the kids, take into account block days, write a function that ranks the outcome of the assignment, then run 1000s of times
+        score = evaluate_result(result_dict)
+        print(f'score is {score}')
+        return score, {key.strftime("%m/%d/%Y"): value for key, value in result_dict.items()}
+
+
+    #TODO: take into account block days
   
 
 
