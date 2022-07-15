@@ -2,9 +2,11 @@
 import calendar
 import datetime
 from .models import Kid, Holiday
+import random
 
 
-def subtract_dish(c_dict, c_key):
+
+def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
     """
     function to reduce monthly_dishes by one.
 
@@ -14,13 +16,23 @@ def subtract_dish(c_dict, c_key):
     c_key : str
     Name of one kid which acts as key of c_dict dictionary
     """
-    assert type(c_dict) == dict
-    assert type(c_key) == str
-    if c_dict[c_key] == 1:
-        del c_dict[c_key]
+    if add:
+        c_dict[c_key] += 1
     else:
         c_dict[c_key] -= 1
     return c_dict
+
+
+def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: dict) -> list:
+    """
+    Function to find potenial cooks for given day
+    """
+    kids_with_dishes_left_to_cook = [k for k, v in current_kids.items() if v > 0]
+    kids_with_block_on_this_day = current_block[day]
+    
+    potenial_cooks = list(set(kids_with_dishes_left_to_cook) - set(kids_with_block_on_this_day))
+    random.shuffle(potenial_cooks)
+    return potenial_cooks
 
 
 def calculate_month():
@@ -36,16 +48,46 @@ def calculate_month():
     #get rid of holidays
     holidays_all = list(Holiday.objects.all())
     holidays_current = [ho.date for ho in holidays_all if (ho.date.year == year and ho.date.month == month)]
-    days_active = [day for day in day_objects if day not in (holidays_current)]
+    #days_active = [day for day in day_objects if day not in (holidays_current)]
     result_dict = {day:'' for day in day_objects if day not in (holidays_current)}
+    block_dict = {day:[] for day in day_objects if day not in (holidays_current)}
 
     #get Kids
     kids = Kid.objects.all()
     kids_dict = {k.name:k.monthly_dishes for k in kids}
 
     def go_cooking():
-        for d in days_active:
-            pass
+        print('comming through')
+        for key in result_dict:
+            if result_dict[key] == '':
+                potenial_cooks = find_potential_cooks(key, block_dict, kids_dict)
+                found = 0
+                
+                for cook in potenial_cooks:
+                    result_dict[key] = cook
+                    add_or_subtract_dish(kids_dict, cook, add=False)
+
+                    if key == list(result_dict.keys())[-1]:
+                        return True
+
+                    if go_cooking():
+                        found = 1
+                        break
+
+                if not found:
+                    kid = result_dict[key]
+                    add_or_subtract_dish(kids_dict, kid, add=True) #kid will not cook today -> +1 dishes
+                    result_dict[key] = ''
+                    return False
+
+                else: 
+                    return True
+    
+    if not go_cooking():
+        print('No solution possible')
+    else:
+
+        print('success')
     #TODO: write recursive and randomised function that assigns the days to the kids, take into account block days, write a function that ranks the outcome of the assignment, then run 1000s of times
   
 
