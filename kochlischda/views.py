@@ -18,9 +18,11 @@ def home(request):
 
 def brewing_the_kochliste(request):
     scoreboard = {}
-    for i in range(1000):
+    for i in range(5000):
         res = calculate_month()
-        scoreboard[res[0]] = res[1]
-    sorted_scoreboard = dict(sorted(scoreboard.items()))
+        if res:
+            scoreboard[i] = [res[0], res[1], res[2]]
+            
+    #sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 
     return HttpResponse(json.dumps(sorted_scoreboard))
