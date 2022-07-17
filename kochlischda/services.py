@@ -6,6 +6,19 @@ import random
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
+
+
+
+    #check doubles per week
+    week = []
+    for day in result:
+        week.append(result[day])
+        if day.weekday == 5:
+            doubles = len(week) - len(list(set(week)))
+            score += doubles * 5
+            week = []
+            
+
     
     #leftovers
     if max(leftover_dishes) > 1:
