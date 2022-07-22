@@ -18,7 +18,6 @@ class Kid(models.Model):
     
     
 
-
 class Dish(models.Model):
     dish_name = models.CharField(max_length=100)
     cook = models.ForeignKey(Kid, on_delete=models.CASCADE)
@@ -30,7 +29,7 @@ class Dish(models.Model):
 
 class Holiday(models.Model):
     date = models.DateField()
-    text = models.CharField(max_length=30, default=str(datetime.now().date()))
+    text = models.CharField(max_length=30, default='free')
 
     def __str__(self):
         return self.text

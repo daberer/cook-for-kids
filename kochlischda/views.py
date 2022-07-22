@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse
 from . import settings
+from .services import calculate_month, additional_holidays
 import os
-from .services import calculate_month
 import json
 import datetime
 
@@ -15,6 +15,14 @@ def base(request):
 
 def home(request):
     return render(request, 'StaticPages/main.html')
+
+
+def add_holiday(request):
+    """
+    #TODO: take admin input
+    """
+    state = additional_holidays('15-31')
+    return HttpResponse(state)
 
 def brewing_the_kochliste(request):
     scoreboard = {}

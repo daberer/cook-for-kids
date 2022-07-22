@@ -24,4 +24,6 @@ urlpatterns = [
     #path('', views.home, name='home'),
     path('start/', views.brewing_the_kochliste, name='brewing'),
     path('base/', views.base, name='base'),
+    path('addholiday/', views.add_holiday, name='add holiday'),
     path("", TemplateView.as_view(template_name="home.html"), name="home"),]
+    

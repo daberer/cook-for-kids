@@ -86,8 +86,7 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
 def calculate_month():
     # initializing the year and month
     year = 2022
-    month = 7
-    # printing the calendar
+    month = 8
     num_days = calendar.monthrange(year, month)[1]
 
     #get rid of saturdays and sundays
@@ -158,6 +157,52 @@ def calculate_month():
 
 
     #TODO: take into account block days, choose lucky parents first and reduce their contingent before running the function (will lead to less results)
+
+def additional_holidays(days):
+    """
+    Function that adds new holidays single or in bulk
+    """
+    month = 8
+    year = 2022
+    s_days = days.split('-')
+    written_to_db = False
+
+
+    def save_day(day_to_save):
+        success = False
+        holidays_all = list(Holiday.objects.all())
+        holidays_datetimes = [days.date for days in holidays_all]
+        if day_to_save.weekday() not in (5,6) and day_to_save not in holidays_datetimes:         
+            new_holiday = Holiday(date=day_to_save, text=str(day_to_save))
+            new_holiday.save()
+            success = True
+        return success
+
+
+    try:       
+        if len(s_days) > 1:
+            days_list = list(range(int(s_days[0]), int(s_days[1])+1))
+            for day in days_list:
+                this_day = datetime.date(year, month, day)
+                written_to_db = save_day(this_day)
+                
+                
+        elif len(s_days) == 1:
+            day = int(s_days[0])
+            this_day = datetime.date(year, month, day)       
+            written_to_db = save_day(this_day)
+            
+
+        else:
+            return ('False input')           
+            
+
+    except Exception as e:
+        return (f'Failure because of {e}')
+
+    if written_to_db:
+        return 'success'
+    return 'Holiday(s) were already in database'
   
 
 
