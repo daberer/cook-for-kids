@@ -1,7 +1,7 @@
 
 import calendar
 import datetime
-from .models import Kid, Holiday
+from .models import Kid, Holiday, Notday
 import random
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
@@ -10,13 +10,13 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
 
 
     #check doubles per week
-    week = []
-    for day in result:
-        week.append(result[day])
-        if day.weekday == 5:
-            doubles = len(week) - len(list(set(week)))
-            score += doubles * 5
-            week = []
+    #week = []
+    #for day in result:
+    #    week.append(result[day])
+    #    if day.weekday == 5:
+    #        doubles = len(week) - len(list(set(week)))
+    #        score += doubles * 5
+    #        week = []
             
 
     
@@ -69,21 +69,23 @@ def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
 
 
 
-
-
-def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: dict) -> list:
+def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: dict, first: str) -> list:
     """
     Function to find potenial cooks for given day
     """
+    #TODO: get rid of current block variable
     kids_with_dishes_left_to_cook = [k for k, v in current_kids.items() if v > 0]
-    kids_with_block_on_this_day = current_block[day]
+
+    #find kids with block today
+    notday = Notday.objects.filter(date=day)[0]
+    kids_with_block_on_this_day = [kid.name for kid in notday.kid.all()]
     
-    potenial_cooks = list(set(kids_with_dishes_left_to_cook) - set(kids_with_block_on_this_day))
+    potenial_cooks = list(set(kids_with_dishes_left_to_cook) - set(kids_with_block_on_this_day) - set([first]))
     random.shuffle(potenial_cooks)
     return potenial_cooks
 
 
-def calculate_month():
+def calculate_month(it=None):
     # initializing the year and month
     year = 2022
     month = 8
@@ -107,12 +109,12 @@ def calculate_month():
     def go_cooking(first=None, second=None):
         for key in result_dict:
             if result_dict[key] == '':
-                potenial_cooks = find_potential_cooks(key, block_dict, kids_dict)
+                potenial_cooks = find_potential_cooks(key, block_dict, kids_dict, first)
                 found = 0
                 
                 for cook in potenial_cooks:
-                    if cook == first or cook == second:
-                        continue
+                    #if cook == first:# or cook == second:
+                    #    continue
                     result_dict[key] = cook
                     add_or_subtract_dish(kids_dict, cook, add=False) #kid will cook -> -1 dishes
 
@@ -134,7 +136,7 @@ def calculate_month():
                     return True
     
     if not go_cooking():
-        print('No solution possible')
+        print(f'try {it} - No solution possible')
         return
     else:
         print('success')
@@ -147,8 +149,8 @@ def calculate_month():
         result_dict = dict(sorted(result_dict.items()))
         score = evaluate_result(result_dict, all_days, list(kids_dict.values()))
 
-        if score > 0:
-            return
+        #if score > 0:
+        #    return
 
          
 
@@ -203,6 +205,79 @@ def additional_holidays(days):
     if written_to_db:
         return 'success'
     return 'Holiday(s) were already in database'
+
+def additional_notdays(days, wishdays=False, kid=None):
+    """
+    Function that adds new holidays single or in bulk
+    """
+    if not kid:
+        return 'No kid specified'
+    month = 8
+    year = 2022
+    num_days = calendar.monthrange(year, month)[1]
+    all_days = [day for day in range(1, num_days+1)]
+
+    s_days = days.split('-')
+    written_to_db = False
+
+
+    def save_day(day_to_save, kid):
+        success = False
+        notdays_all = list(Notday.objects.all())
+        notdays_datetimes = [days.date for days in notdays_all]
+        if day_to_save.weekday() not in (5,6):
+            if day_to_save in notdays_datetimes:
+                old_notday = Notday.objects.filter(date=day_to_save)[0]
+                old_notday.kid.add(kid)
+                success = True
+            else:
+                new_notday = Notday(date=day_to_save)
+                new_notday.save()
+                new_notday.kid.add(kid)
+                success = True
+        return success
+
+    try:       #kid.notdays.add(new_notday) #new_notday = Notday(date=datetime.date(2022, 8, 22))
+        if len(s_days) > 1:  #kid.allnotdays.all() #Notday.objects.filter(date=datetime.date(2022, 8, 1))
+            days_list = list(range(int(s_days[0]), int(s_days[1])+1))
+            if wishdays:
+                days_list = list(set(all_days) - set(days_list))
+
+
+            #get all kids in one day
+            #this_notday = Notday.objects.all()[0]    
+            #list_todays_kids = [[l for l in k.kid.all()] for k in this_notday][0]
+            for day in days_list: # new_notday.notdaykids.all() #[k.kid.all() for k in a]
+                this_day = datetime.date(year, month, day)
+                written_to_db = save_day(this_day, kid)
+                
+                
+        elif len(s_days) == 1:
+            day = int(s_days[0])
+            this_day = datetime.date(year, month, day)       
+            written_to_db = save_day(this_day, kid)
+            
+        else:
+            return ('False input')  
+
+    except Exception as e:
+        return (f'Failure because of {e}')
+
+    if written_to_db:
+        return 'success'
+    return 'Notdays(s) were already in database'
+
+
+def get_list_of_kids():
+    return [kid for kid in Kid.objects.all()]
+
+
+
+
+         
+            
+
+
   
 
 

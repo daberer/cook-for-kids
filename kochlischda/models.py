@@ -3,6 +3,7 @@ from operator import mod
 from django.db import models
 
 
+
 class Kid(models.Model):
     """
     Kid class represents parents cooking duty. If the kid is the designated candidate for the day, 
@@ -14,8 +15,7 @@ class Kid(models.Model):
     score = models.IntegerField()
 
     def __str__(self):
-        return self.name
-    
+        return self.name 
     
 
 class Dish(models.Model):
@@ -26,12 +26,21 @@ class Dish(models.Model):
         return self.dish_name
 
 
-
 class Holiday(models.Model):
     date = models.DateField()
     text = models.CharField(max_length=30, default='free')
 
     def __str__(self):
         return self.text
+
+class Notday(models.Model):
+    date = models.DateField()
+    kid = models.ManyToManyField(Kid, related_name="notdaykids")
+    
+    def __str__(self):
+        return str(self.date)
+
+
+    
 
 
