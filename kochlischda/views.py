@@ -4,6 +4,7 @@ from .services import calculate_month, additional_holidays, additional_notdays, 
 import os
 import json
 import datetime
+from .forms import NotdaysForm
 
 
 
@@ -28,11 +29,28 @@ def add_notdays(request):
     """
     #TODO: take user input
     """
-    wishdays = 0
-    kids_list = get_list_of_kids()
-    this_kid = kids_list[3]
-    state = additional_notdays('15-31', wishdays=wishdays, kid=this_kid)
-    return HttpResponse(state)
+    if request.method == 'POST':
+        form = NotdaysForm(request.POST)
+        if form.is_valid():
+            dates = form.cleaned_data['dates']
+            kid = form.cleaned_data['kid']
+            dishes_this_month = form.cleaned_data['dishes_this_month']
+            wishdays = form.cleaned_data['wishdays']
+            month = form.cleaned_data['month']
+            year = form.cleaned_data['year']
+            state = additional_notdays(days=dates, wishdays=wishdays, kid=list(kid)[0], dishes_this_month=dishes_this_month, month=month, year=year)
+            return HttpResponse(state)
+        else:
+            print(form.errors.as_data()) # here you print errors to terminal
+    
+
+    form = NotdaysForm()
+    return render(request, 'notday_form.html', {'form': form})
+    #wishdays = 0
+    #kids_list = get_list_of_kids()
+    #this_kid = kids_list[3]
+    #state = additional_notdays('15-31', wishdays=wishdays, kid=this_kid)
+    #return HttpResponse(state)
 
 def brewing_the_kochliste(request):
     scoreboard = {}

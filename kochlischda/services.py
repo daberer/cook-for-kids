@@ -10,13 +10,13 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
 
 
     #check doubles per week
-    #week = []
-    #for day in result:
-    #    week.append(result[day])
-    #    if day.weekday == 5:
-    #        doubles = len(week) - len(list(set(week)))
-    #        score += doubles * 5
-    #        week = []
+    week = []
+    for day in result:
+       week.append(result[day])
+       if day.weekday == 5:
+           doubles = len(week) - len(list(set(week)))
+           score += doubles * 5
+           week = []
             
 
     
@@ -48,7 +48,7 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
             
 
 
-    print('hey')
+
 
 def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
     """
@@ -206,14 +206,14 @@ def additional_holidays(days):
         return 'success'
     return 'Holiday(s) were already in database'
 
-def additional_notdays(days, wishdays=False, kid=None):
+def additional_notdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None):
     """
     Function that adds new holidays single or in bulk
     """
     if not kid:
         return 'No kid specified'
-    month = 8
-    year = 2022
+    month = int(month)
+    year = int(year)
     num_days = calendar.monthrange(year, month)[1]
     all_days = [day for day in range(1, num_days+1)]
 
