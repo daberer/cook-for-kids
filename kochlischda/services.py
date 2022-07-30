@@ -1,12 +1,11 @@
 
 import calendar
 import datetime
-from .models import Kid, Holiday, Notday
+from .models import Kid, Holiday, Waiverday
 import random
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
-
 
 
     #check doubles per week
@@ -77,8 +76,15 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
     kids_with_dishes_left_to_cook = [k for k, v in current_kids.items() if v > 0]
 
     #find kids with block today
-    notday = Notday.objects.filter(date=day)[0]
-    kids_with_block_on_this_day = [kid.name for kid in notday.kid.all()]
+    
+    try:
+        waiverday = Waiverday.objects.filter(date=day)[0]
+        kids_with_block_on_this_day = [kid.name for kid in waiverday.kid.all()]
+    except IndexError as e:
+        waiverday = None
+        kids_with_block_on_this_day = []
+    
+    
     
     potenial_cooks = list(set(kids_with_dishes_left_to_cook) - set(kids_with_block_on_this_day) - set([first]))
     random.shuffle(potenial_cooks)
@@ -206,7 +212,7 @@ def additional_holidays(days):
         return 'success'
     return 'Holiday(s) were already in database'
 
-def additional_notdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None):
+def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None):
     """
     Function that adds new holidays single or in bulk
     """
@@ -223,31 +229,28 @@ def additional_notdays(days, wishdays=False, kid=None, dishes_this_month=None, m
 
     def save_day(day_to_save, kid):
         success = False
-        notdays_all = list(Notday.objects.all())
-        notdays_datetimes = [days.date for days in notdays_all]
+        waiverdays_all = list(Waiverday.objects.all())
+        waiverdays_datetimes = [days.date for days in waiverdays_all]
         if day_to_save.weekday() not in (5,6):
-            if day_to_save in notdays_datetimes:
-                old_notday = Notday.objects.filter(date=day_to_save)[0]
-                old_notday.kid.add(kid)
+            if day_to_save in waiverdays_datetimes:
+                old_waiverday = Waiverday.objects.filter(date=day_to_save)[0]
+                old_waiverday.kid.add(kid)
                 success = True
             else:
-                new_notday = Notday(date=day_to_save)
-                new_notday.save()
-                new_notday.kid.add(kid)
+                new_waiverday = Waiverday(date=day_to_save)
+                new_waiverday.save()
+                new_waiverday.kid.add(kid)
                 success = True
         return success
 
-    try:       #kid.notdays.add(new_notday) #new_notday = Notday(date=datetime.date(2022, 8, 22))
-        if len(s_days) > 1:  #kid.allnotdays.all() #Notday.objects.filter(date=datetime.date(2022, 8, 1))
+    try:       
+        if len(s_days) > 1:  
             days_list = list(range(int(s_days[0]), int(s_days[1])+1))
             if wishdays:
                 days_list = list(set(all_days) - set(days_list))
 
 
-            #get all kids in one day
-            #this_notday = Notday.objects.all()[0]    
-            #list_todays_kids = [[l for l in k.kid.all()] for k in this_notday][0]
-            for day in days_list: # new_notday.notdaykids.all() #[k.kid.all() for k in a]
+            for day in days_list: 
                 this_day = datetime.date(year, month, day)
                 written_to_db = save_day(this_day, kid)
                 
@@ -265,7 +268,7 @@ def additional_notdays(days, wishdays=False, kid=None, dishes_this_month=None, m
 
     if written_to_db:
         return 'success'
-    return 'Notdays(s) were already in database'
+    return 'Waiverday(s) already in database'
 
 
 def get_list_of_kids():

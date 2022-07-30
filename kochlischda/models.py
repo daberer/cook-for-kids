@@ -33,9 +33,9 @@ class Holiday(models.Model):
     def __str__(self):
         return self.text
 
-class Notday(models.Model):
+class Waiverday(models.Model):
     date = models.DateField()
-    kid = models.ManyToManyField(Kid, related_name="notdaykids")
+    kid = models.ManyToManyField(Kid, related_name="waiverdaykids")
     
     def __str__(self):
         return str(self.date)
