@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
+
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+          <div class="col-6 col-md-4">
+            {{ resulttable1|safe }}
+          </div>
+          <div class="col-6 col-md-4">
+            {{ resulttable2|safe }}
+          </div>
+          <div class="col-6 col-md-4">
+            {{ resulttable3|safe }}
+          </div>
+        </div>
+      </div>
+
+
+
+
+</body>
+</html>

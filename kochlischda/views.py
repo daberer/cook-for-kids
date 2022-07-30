@@ -5,6 +5,7 @@ import os
 import json
 import datetime
 from .forms import WaiverdaysForm
+import pandas as pd
 
 
 
@@ -59,6 +60,12 @@ def brewing_the_kochliste(request):
         if res:
             scoreboard[i] = [res[0], res[1], res[2]]
             
-    #sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
+    sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 
-    return HttpResponse(json.dumps(sorted_scoreboard))
+    df1 = pd.DataFrame(sorted_scoreboard[0][1][2], index=['Kids (variant 1)']).transpose()
+    df2 = pd.DataFrame(sorted_scoreboard[1][1][2], index=['Kids (variant 2)']).transpose()
+    df3 = pd.DataFrame(sorted_scoreboard[2][1][2], index=['Kids (variant 3)']).transpose()
+
+    
+    #return HttpResponse(df.to_html())
+    return render(request, 'result_form.html', {'resulttable1': df1.to_html().replace("dataframe", "dataframe dfirst"), 'resulttable2': df2.to_html().replace("dataframe", "dataframe dsecond"), 'resulttable3': df3.to_html().replace("dataframe", "dataframe dthird")})

@@ -7,3 +7,4 @@ django-fontawesome-5==1.0.18
 djangotoolbox==1.8.0
 soupsieve==2.3.2.post1
 sqlparse==0.4.2
+pandas
