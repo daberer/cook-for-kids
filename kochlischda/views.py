@@ -68,4 +68,4 @@ def brewing_the_kochliste(request):
 
     
     #return HttpResponse(df.to_html())
-    return render(request, 'result_form.html', {'resulttable1': df1.to_html().replace("dataframe", "dataframe dfirst"), 'resulttable2': df2.to_html().replace("dataframe", "dataframe dsecond"), 'resulttable3': df3.to_html().replace("dataframe", "dataframe dthird")})
+    return render(request, 'result_form.html', {'resulttable1': df1.to_html(classes="dataframe dfirst"), 'resulttable2': df2.to_html(classes="dataframe dsecond"), 'resulttable3': df3.to_html(classes="dataframe dthird")})

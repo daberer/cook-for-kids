@@ -1,15 +1,13 @@
 <!DOCTYPE html>
-
-{% load static %}
-
-{# Load the tag library #}
-{% load bootstrap5 %}
-{# Load CSS and JavaScript #}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
-
 <html>
+
 <head>
+  {% load static %}
+  {# Load the tag library #}
+  {% load bootstrap5 %}
+  {# Load CSS and JavaScript #}
+  {% bootstrap_css %}
+  {% bootstrap_javascript %}
   <meta charset="utf-8">
   <title>{% block title %}Django Auth Tutorial{% endblock %}</title>
 </head>
