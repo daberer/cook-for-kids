@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse
 from . import settings
-from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids
+from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids, check_correctness, optimise
 import os
 import json
 import datetime
@@ -23,10 +23,10 @@ def add_holidays(request):
     """
     #TODO: take admin input
     """
-    state = additional_holidays('15-31')
+    state = additional_holidays('1-4')
     return HttpResponse(state)
 
-def add_notdays(request):
+def add_waiverdays(request):
     """
     #TODO: take user input
     """
@@ -55,16 +55,23 @@ def add_notdays(request):
 
 def brewing_the_kochliste(request):
     scoreboard = {}
-    for i in range(100):
+    for i in range(15):
         res = calculate_month(i)
+        #ro = check_correctness(res)
         if res:
             scoreboard[i] = [res[0], res[1], res[2]]
             
     sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 
     df1 = pd.DataFrame(sorted_scoreboard[0][1][2], index=['Kids (variant 1)']).transpose()
+    df1.index = pd.to_datetime(df1.index)
+    df1 = optimise(df1)
     df2 = pd.DataFrame(sorted_scoreboard[1][1][2], index=['Kids (variant 2)']).transpose()
+    df2.index = pd.to_datetime(df2.index)
+    df2 = optimise(df2)
     df3 = pd.DataFrame(sorted_scoreboard[2][1][2], index=['Kids (variant 3)']).transpose()
+    df3.index = pd.to_datetime(df3.index)
+    df3 = optimise(df3)
 
     
     #return HttpResponse(df.to_html())
