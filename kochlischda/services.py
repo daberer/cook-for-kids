@@ -7,8 +7,14 @@ import random
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
 
+    #leftovers
+    if max(leftover_dishes) > 1:
+        score += 10
+    
+    return score
 
-    #check doubles per week
+
+    """ #check doubles per week
     week = []
     for day in result:
        week.append(result[day])
@@ -19,9 +25,7 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
             
 
     
-    #leftovers
-    if max(leftover_dishes) > 1:
-        score += 10
+    
 
 
     # sequences
@@ -44,7 +48,7 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
                 if li[i-1] == l:
                     score += 50
     return score
-            
+             """
 
 
 
@@ -94,7 +98,7 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
 def calculate_month(it=None):
     # initializing the year and month
     year = 2022
-    month = 9
+    month = 10
     num_days = calendar.monthrange(year, month)[1]
 
     #get rid of saturdays and sundays
@@ -155,8 +159,8 @@ def calculate_month(it=None):
         result_dict = dict(sorted(result_dict.items()))
         score = evaluate_result(result_dict, all_days, list(kids_dict.values()))
 
-        #if score > 0:
-        #    return
+        if score > 0:
+            return
 
          
 
@@ -266,9 +270,9 @@ def additional_holidays(days):
     """
     Function that adds new holidays single or in bulk
     """
-    month = 9
+    month = 10
     year = 2022
-    s_days = days.split('-')
+    s_days_array = days.split(',')
     written_to_db = False
 
 
@@ -283,22 +287,23 @@ def additional_holidays(days):
         return success
 
 
-    try:       
-        if len(s_days) > 1:
-            days_list = list(range(int(s_days[0]), int(s_days[1])+1))
-            for day in days_list:
-                this_day = datetime.date(year, month, day)
+    try:
+        for s_days in s_days_array:       
+            if '-' in s_days:
+                s_days = s_days.split('-')
+                days_list = list(range(int(s_days[0]), int(s_days[1])+1))
+                for day in days_list:
+                    this_day = datetime.date(year, month, day)
+                    written_to_db = save_day(this_day)
+                    
+                    
+            else:
+                day = int(s_days[0])
+                this_day = datetime.date(year, month, day)       
                 written_to_db = save_day(this_day)
                 
-                
-        elif len(s_days) == 1:
-            day = int(s_days[0])
-            this_day = datetime.date(year, month, day)       
-            written_to_db = save_day(this_day)
-            
 
-        else:
-            return ('False input')           
+                      
             
 
     except Exception as e:
@@ -316,10 +321,13 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
         return 'No kid specified'
     month = int(month)
     year = int(year)
+    
+
     num_days = calendar.monthrange(year, month)[1]
     all_days = [day for day in range(1, num_days+1)]
 
-    s_days = days.split('-')
+    days = days.strip()
+    s_days_array = days.split(',')
     written_to_db = False
 
 
@@ -339,25 +347,26 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
                 success = True
         return success
 
-    try:       
-        if len(s_days) > 1:  
-            days_list = list(range(int(s_days[0]), int(s_days[1])+1))
-            if wishdays:
-                days_list = list(set(all_days) - set(days_list))
+    try:
+        for s_days in s_days_array:       
+            if '-' in s_days:
+                s_days = s_days.split('-')  
+                days_list = list(range(int(s_days[0]), int(s_days[1])+1))
+                if wishdays: #Todo: fix this
+                    days_list = list(set(all_days) - set(days_list))
 
 
-            for day in days_list: 
-                this_day = datetime.date(year, month, day)
+                for day in days_list: 
+                    this_day = datetime.date(year, month, day)
+                    written_to_db = save_day(this_day, kid)
+                    
+                    
+            else:
+                #Todo: add wishday feature here
+                day = int(s_days)
+                this_day = datetime.date(year, month, day)       
                 written_to_db = save_day(this_day, kid)
-                
-                
-        elif len(s_days) == 1:
-            day = int(s_days[0])
-            this_day = datetime.date(year, month, day)       
-            written_to_db = save_day(this_day, kid)
-            
-        else:
-            return ('False input')  
+
 
     except Exception as e:
         return (f'Failure because of {e}')
