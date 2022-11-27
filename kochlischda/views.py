@@ -23,7 +23,7 @@ def add_holidays(request):
     """
     #TODO: take admin input
     """
-    state = additional_holidays('1-4')
+    state = additional_holidays('24-31')
     return HttpResponse(state)
 
 def add_waiverdays(request):
@@ -55,7 +55,7 @@ def add_waiverdays(request):
 
 def brewing_the_kochliste(request):
     scoreboard = {}
-    for i in range(15):
+    for i in range(50):
         res = calculate_month(i)
         #ro = check_correctness(res)
         if res:

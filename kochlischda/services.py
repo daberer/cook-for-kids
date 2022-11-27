@@ -98,7 +98,7 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
 def calculate_month(it=None):
     # initializing the year and month
     year = 2022
-    month = 10
+    month = 12
     num_days = calendar.monthrange(year, month)[1]
 
     #get rid of saturdays and sundays
@@ -246,12 +246,21 @@ def optimise(dframe):
                 if kid1 == kid2 or kid2 is None:
                     r = i
                     continue
-                # check waiverdays
+                # check waiverdays 
+                # Problem if Waiverday.object does not exist -> therefore try statements
                 try:
-                    if Kid.objects.get(name=kid2) in Waiverday.objects.get(date=i).kid.all() or Kid.objects.get(name=kid1) in Waiverday.objects.get(date=r).kid.all():
+                    waiverday1 = Waiverday.objects.get(date=i).kid.all()
+                except Waiverday.DoesNotExist:
+                    waiverday1 = []
+                try:
+                    waiverday2 = Waiverday.objects.get(date=r).kid.all()
+                except Waiverday.DoesNotExist:
+                    waiverday2 = []
+                try:
+                    if Kid.objects.get(name=kid2) in waiverday1 or Kid.objects.get(name=kid1) in waiverday2:
                         r = i
-                except Exception:
-                    print('whats going on')
+                except Exception as e:
+                    print(f'error {e}, -kid1{kid1}, -kid2{kid2}')
 
 
             to_1, k1_1, k2_1, km1_1, km2_1 = rate(df, df.at[i, df.keys()[0]], df.at[r, df.keys()[0]])
@@ -270,7 +279,7 @@ def additional_holidays(days):
     """
     Function that adds new holidays single or in bulk
     """
-    month = 10
+    month = 12
     year = 2022
     s_days_array = days.split(',')
     written_to_db = False
