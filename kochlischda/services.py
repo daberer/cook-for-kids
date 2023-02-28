@@ -1,9 +1,10 @@
 
 import calendar
 import datetime
-from .models import Kid, Holiday, Waiverday
+from .models import Kid, Holiday, Waiverday, Dish
 import random
-
+import kochlischda.globals as globals
+import itertools
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
@@ -94,8 +95,8 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
 
 def calculate_month(it=None):
     # initializing the year and month
-    year = 2023
-    month = 3
+    year = globals.year
+    month = globals.month
     num_days = calendar.monthrange(year, month)[1]
 
     # get rid of saturdays and sundays
@@ -304,8 +305,8 @@ def additional_holidays(days):
     """
     Function that adds new holidays single or in bulk
     """
-    month = 3
-    year = 2023
+    month = globals.month
+    year = globals.year
     s_days_array = days.split(',')
     written_to_db = False
 
@@ -347,14 +348,33 @@ def additional_holidays(days):
         return 'success'
     return 'Holiday(s) were already in database'
 
-def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None):
+def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None, dish=None):
     """
     Function that adds new holidays single or in bulk
     """
+    res = ''
     if not kid:
         return 'No kid specified'
+    if dishes_this_month:
+        current_kid = Kid.objects.filter(name=kid).first()
+        current_kid.monthly_dishes = dishes_this_month
+        current_kid.save()
+        res += 'kid updated, '
+
+    if dish:
+        new_dish = Dish(dish_name=dish, cook=kid)
+        new_dish.save()
+        res+='dish updated'
+
+    
     month = int(month)
     year = int(year)
+
+    if days == '':
+        res += ' No days specified'
+        return res
+
+    
     
 
     num_days = calendar.monthrange(year, month)[1]
@@ -362,6 +382,19 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
 
     days = days.strip()
     s_days_array = days.split(',')
+
+    
+    def entry_split(day):
+        if '-' in day:
+            sp = day.split('-')
+            return list(range(int(sp[0]), int(sp[1])+1))
+        return [int(day)]
+
+    mylists = [entry_split(x) for x in s_days_array]
+    flat_list = list(itertools.chain(*mylists))
+    if wishdays:
+        flat_list = list(set(all_days) - set(flat_list))
+
     written_to_db = False
 
 
@@ -382,24 +415,9 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
         return success
 
     try:
-        for s_days in s_days_array:       
-            if '-' in s_days:
-                s_days = s_days.split('-')  
-                days_list = list(range(int(s_days[0]), int(s_days[1])+1))
-                if wishdays: #Todo: fix this
-                    days_list = list(set(all_days) - set(days_list))
-
-
-                for day in days_list: 
-                    this_day = datetime.date(year, month, day)
-                    written_to_db = save_day(this_day, kid)
-                    
-                    
-            else:
-                #Todo: add wishday feature here
-                day = int(s_days)
-                this_day = datetime.date(year, month, day)       
-                written_to_db = save_day(this_day, kid)
+        for day in flat_list:       
+            this_day = datetime.date(year, month, day)
+            written_to_db = save_day(this_day, kid)             
 
 
     except Exception as e:

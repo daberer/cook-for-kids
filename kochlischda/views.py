@@ -26,7 +26,7 @@ def add_holidays(request):
     state = additional_holidays('1-8')
     return HttpResponse(state)
 
-def add_waiverdays(request):
+def setup_month(request):
     """
     #TODO: take user input
     """
@@ -36,10 +36,11 @@ def add_waiverdays(request):
             dates = form.cleaned_data['dates']
             kid = form.cleaned_data['kid']
             dishes_this_month = form.cleaned_data['dishes_this_month']
+            dish = form.cleaned_data['dish']
             wishdays = form.cleaned_data['wishdays']
             month = form.cleaned_data['month']
             year = form.cleaned_data['year']
-            state = additional_waiverdays(days=dates, wishdays=wishdays, kid=list(kid)[0], dishes_this_month=dishes_this_month, month=month, year=year)
+            state = additional_waiverdays(days=dates, wishdays=wishdays, kid=list(kid)[0], dishes_this_month=dishes_this_month, month=month, year=year, dish=dish)
             return HttpResponse(state)
         else:
             print(form.errors.as_data()) # here you print errors to terminal

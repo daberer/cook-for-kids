@@ -19,7 +19,7 @@ class Kid(models.Model):
     
 
 class Dish(models.Model):
-    dish_name = models.CharField(max_length=100)
+    dish_name = models.CharField(max_length=500)
     cook = models.ForeignKey(Kid, on_delete=models.CASCADE)
 
     def __str__(self):
