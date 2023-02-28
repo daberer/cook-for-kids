@@ -23,7 +23,7 @@ def add_holidays(request):
     """
     #TODO: take admin input
     """
-    state = additional_holidays('24-31')
+    state = additional_holidays('1-8')
     return HttpResponse(state)
 
 def add_waiverdays(request):
@@ -55,7 +55,7 @@ def add_waiverdays(request):
 
 def brewing_the_kochliste(request):
     scoreboard = {}
-    for i in range(50):
+    for i in range(200):
         res = calculate_month(i)
         #ro = check_correctness(res)
         if res:
@@ -64,14 +64,22 @@ def brewing_the_kochliste(request):
     sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 
     df1 = pd.DataFrame(sorted_scoreboard[0][1][2], index=['Kids (variant 1)']).transpose()
+    
     df1.index = pd.to_datetime(df1.index)
     df1 = optimise(df1)
+    df1.fillna('', inplace=True)
+    #df1 = ({df1.index: 32, df1.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[0][1][1].items()])})
     df2 = pd.DataFrame(sorted_scoreboard[1][1][2], index=['Kids (variant 2)']).transpose()
     df2.index = pd.to_datetime(df2.index)
     df2 = optimise(df2)
+    df2.fillna('', inplace=True)
+    #df2 = df2.append({df2.index: 32, df2.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[1][1][1].items()])})
     df3 = pd.DataFrame(sorted_scoreboard[2][1][2], index=['Kids (variant 3)']).transpose()
     df3.index = pd.to_datetime(df3.index)
     df3 = optimise(df3)
+    df3.fillna('', inplace=True)
+    #df3 = df3.append({df3.index: 32, df3.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[2][1][1].items()])})
+    print(f'Lucky kids: \n {sorted_scoreboard[0][1][1]} \n {sorted_scoreboard[1][1][1]} \n {sorted_scoreboard[2][1][1]}')
 
     
     #return HttpResponse(df.to_html())

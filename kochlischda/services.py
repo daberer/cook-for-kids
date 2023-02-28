@@ -4,15 +4,15 @@ import datetime
 from .models import Kid, Holiday, Waiverday
 import random
 
+
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
 
-    #leftovers
+    # leftovers
     if max(leftover_dishes) > 1:
         score += 10
-    
-    return score
 
+    return score
 
     """ #check doubles per week
     week = []
@@ -22,10 +22,10 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
            doubles = len(week) - len(list(set(week)))
            score += doubles * 5
            week = []
-            
 
-    
-    
+
+
+
 
 
     # sequences
@@ -33,7 +33,7 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     for i, l in enumerate(li):
         if i == 0:
             continue
-        
+
         if l:
             if i > 3:
                 if li[i-4] == l :
@@ -49,8 +49,6 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
                     score += 50
     return score
              """
-
-
 
 
 def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
@@ -71,62 +69,68 @@ def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
     return c_dict
 
 
-
 def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: dict, first: str) -> list:
     """
     Function to find potenial cooks for given day
     """
-    #TODO: get rid of current block variable
-    kids_with_dishes_left_to_cook = [k for k, v in current_kids.items() if v > 0]
+    # TODO: get rid of current block variable
+    kids_with_dishes_left_to_cook = [
+        k for k, v in current_kids.items() if v > 0]
 
-    #find kids with block today
-    
+    # find kids with block today
+
     try:
         waiverday = Waiverday.objects.filter(date=day)[0]
         kids_with_block_on_this_day = [kid.name for kid in waiverday.kid.all()]
     except IndexError as e:
         waiverday = None
         kids_with_block_on_this_day = []
-    
-    
-    
-    potenial_cooks = list(set(kids_with_dishes_left_to_cook) - set(kids_with_block_on_this_day) - set([first]))
+
+    potenial_cooks = list(set(kids_with_dishes_left_to_cook) -
+                          set(kids_with_block_on_this_day) - set([first]))
     random.shuffle(potenial_cooks)
     return potenial_cooks
 
 
 def calculate_month(it=None):
     # initializing the year and month
-    year = 2022
-    month = 12
+    year = 2023
+    month = 3
     num_days = calendar.monthrange(year, month)[1]
 
-    #get rid of saturdays and sundays
-    all_days = [datetime.date(year, month, day) for day in range(1, num_days+1)]
-    day_objects = [datetime.date(year, month, day) for day in range(1, num_days+1) if datetime.date(year, month, day).weekday() not in (5,6)]
+    # get rid of saturdays and sundays
+    all_days = [datetime.date(year, month, day)
+                              for day in range(1, num_days+1)]
+    day_objects = [datetime.date(year, month, day) for day in range(
+        1, num_days+1) if datetime.date(year, month, day).weekday() not in (5, 6)]
 
-    #get rid of holidays
+    # get rid of holidays
     holidays_all = list(Holiday.objects.all())
-    holidays_current = [ho.date for ho in holidays_all if (ho.date.year == year and ho.date.month == month)]
-    #days_active = [day for day in day_objects if day not in (holidays_current)]
-    result_dict = {day:'' for day in day_objects if day not in (holidays_current)}
-    block_dict = {day:[] for day in day_objects if day not in (holidays_current)}
+    holidays_current = [ho.date for ho in holidays_all if (
+        ho.date.year == year and ho.date.month == month)]
+    # days_active = [day for day in day_objects if day not in (holidays_current)]
+    result_dict = {
+        day: '' for day in day_objects if day not in (holidays_current)}
+    block_dict = {day: []
+        for day in day_objects if day not in (holidays_current)}
 
-    #get Kids
+    # get Kids
     kids = Kid.objects.all()
-    kids_dict = {k.name:k.monthly_dishes for k in kids}
+    kids_dict = {k.name: k.monthly_dishes for k in kids}
 
     def go_cooking(first=None, second=None):
         for key in result_dict:
             if result_dict[key] == '':
-                potenial_cooks = find_potential_cooks(key, block_dict, kids_dict, first)
+                potenial_cooks = find_potential_cooks(
+                    key, block_dict, kids_dict, first)
                 found = 0
-                
+
                 for cook in potenial_cooks:
-                    #if cook == first:# or cook == second:
+                    # if cook == first:# or cook == second:
                     #    continue
                     result_dict[key] = cook
-                    add_or_subtract_dish(kids_dict, cook, add=False) #kid will cook -> -1 dishes
+                    # kid will cook -> -1 dishes
+                    add_or_subtract_dish(kids_dict, cook, add=False)
 
                     if key == list(result_dict.keys())[-1]:
                         return True
@@ -137,19 +141,38 @@ def calculate_month(it=None):
 
                 if not found:
                     kid = result_dict[key]
-                    if kid != '': #consider case that noone could be found
-                        add_or_subtract_dish(kids_dict, kid, add=True) #kid will not cook today -> +1 dishes
+                    if kid != '':  # consider case that noone could be found
+                        # kid will not cook today -> +1 dishes
+                        add_or_subtract_dish(kids_dict, kid, add=True)
                     result_dict[key] = ''
                     return False
 
-                else: 
+                else:
                     return True
-    
+
     if not go_cooking():
         print(f'try {it} - No solution possible')
         return
     else:
-        print('success')
+        max_luck = 0
+        lucky_kids = []
+        lucky = []
+        for kid, luck in kids_dict.items():
+            if luck > 0:
+                if luck > max_luck:
+                    max_luck = luck
+                lucky.append(f'kid:{kid}, luck:{luck}')
+                lucky_kids.append(kid)
+        
+        if max_luck > 1 or 'Lucía' in lucky_kids or 'Sophie,Samuel,Johanna' in lucky_kids:
+            print(f'try {it} - Bad solution')
+            return
+
+        
+        print(f'success, luckies: {lucky}')
+
+
+        
         
         # fill up month
         for day in all_days:
@@ -228,6 +251,8 @@ def optimise(dframe):
 
         return sum_max, kid1_min_rest_days, kid2_min_rest_days, kid1_mean_rest_days, kid2_mean_rest_days
 
+
+
     def run_loop(df):
         for i, row in df.iterrows():
             kid1 = df.at[i, df.keys()[0]]
@@ -240,7 +265,7 @@ def optimise(dframe):
             while i == r:
                 breakout+=1
                 if breakout == 100:
-                    continue
+                    break
                 r = df.index[random.randint(0, len(df)-1)]
                 kid2 = df.at[r, df.keys()[0]]
                 if kid1 == kid2 or kid2 is None:
@@ -279,8 +304,8 @@ def additional_holidays(days):
     """
     Function that adds new holidays single or in bulk
     """
-    month = 12
-    year = 2022
+    month = 3
+    year = 2023
     s_days_array = days.split(',')
     written_to_db = False
 
