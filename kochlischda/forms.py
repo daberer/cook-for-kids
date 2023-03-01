@@ -5,6 +5,7 @@ import datetime
 now = datetime.datetime.now()
 year = now.year
 month = now.month
+frame = 1
 if month == 12:
     month = 1
 else:
@@ -30,6 +31,10 @@ MONTHS= (
 ('12', 'Dec'),
 )
 
+ONETWOTHREE=((1, 'ONE'),
+            (2, 'TWO'),
+            (3, 'THREE'),)
+
 
 class WaiverdaysForm(forms.Form):
     year = forms.ChoiceField(choices=years)
@@ -39,4 +44,8 @@ class WaiverdaysForm(forms.Form):
     dates = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'e.g.: 1, 10-15'}))
     dishes_this_month = forms.IntegerField(required=False, widget=forms.TextInput(attrs={'placeholder': 'Number of meals to cook this month'}))
     wishdays = forms.BooleanField(required=False)
+
+
+class DataframeChoice(forms.Form):
+    df_number = forms.ChoiceField(choices=ONETWOTHREE, initial=str(frame))
     
