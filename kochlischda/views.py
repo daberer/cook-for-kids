@@ -11,6 +11,7 @@ from .models import Dish
 import os
 from django.conf import settings
 from django.http import FileResponse
+import tempfile
 
 
 
@@ -75,7 +76,7 @@ def brewing_the_kochliste(request):
         df.rename(columns={df.keys()[0]: "kid"}, inplace=True)
         for i, row in df.iterrows():
             if row.kid != '':
-                if row.name.day_of_week == 4:
+                if row.name.day_of_week == 2:
                     df.at[i, 'dish'] = 'Essen to go (Ausflugsessen)'
                 else:
                     res = [x for x in Dish.objects.all() if x.cook.name == row.kid]
@@ -89,13 +90,49 @@ def brewing_the_kochliste(request):
         ####### fill nan values of weekend days and holidays
         df['dish'].fillna('')
         
-        df.to_excel(f'/home/daberer/Documents/Kochliste/{globals.year}_{globals.month}_kochliste.xlsx', sheet_name='Sheet1')
+        df.reset_index(inplace=True)
+        
+        #df.to_excel(f'/home/daberer/Documents/Kochliste/{globals.year}_{globals.month}_kochliste.xlsx', sheet_name='Sheet1')
+        temp_path = tempfile.mkdtemp()
 
-        path_to_excel = f'/home/daberer/Documents/Kochliste/{globals.year}_{globals.month}_kochliste.xlsx'
+        path_to_excel = os.path.join(temp_path, f'{globals.year}_{globals.month}_kochliste.xlsx')
+        # Create a Pandas Excel writer using XlsxWriter as the engine.
+        writer = pd.ExcelWriter(path_to_excel, engine='xlsxwriter')
+
+        # Write the dataframe data to XlsxWriter. Turn off the default header and
+        # index and skip one row to allow us to insert a user defined header.
+        df.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False, index=False)
+
+        
+
+        # Get the xlsxwriter workbook and worksheet objects.
+        workbook = writer.book
+        worksheet = writer.sheets['Sheet1']
+
+
+        # Get the dimensions of the dataframe.
+        (max_row, max_col) = df.shape
+        
+        # Create a list of column headers, to use in add_table().
+        column_settings = [{'header': column} for column in df.columns]
+
+        # Add the Excel table structure. Pandas will add the data.
+        worksheet.add_table(0, 0, max_row, max_col - 1, {'columns': column_settings})
+
+        text_format = workbook.add_format({'text_wrap' : True})
+
+        # Make the columns wider for clarity.
+        worksheet.set_column(0, 0, 20)
+        worksheet.set_column(1, 1, 20)
+        worksheet.set_column(1, 2, 60, text_format)
+
+
+        # Close the Pandas Excel writer and output the Excel file.
+        writer.close()
 
         return FileResponse(open(path_to_excel, 'rb'))
     
-    
+
 
     scoreboard = {}
     for i in range(200):
@@ -109,17 +146,20 @@ def brewing_the_kochliste(request):
     df1 = pd.DataFrame(sorted_scoreboard[0][1][2], index=['Kids (variant 1)']).transpose()
     
     df1.index = pd.to_datetime(df1.index)
-    #df1 = optimise(df1)
+    if globals.optimise:
+        df1 = optimise(df1)
     df1.fillna('', inplace=True)
     #df1 = ({df1.index: 32, df1.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[0][1][1].items()])})
     df2 = pd.DataFrame(sorted_scoreboard[1][1][2], index=['Kids (variant 2)']).transpose()
     df2.index = pd.to_datetime(df2.index)
-    #df2 = optimise(df2)
+    if globals.optimise:
+        df2 = optimise(df2)
     df2.fillna('', inplace=True)
     #df2 = df2.append({df2.index: 32, df2.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[1][1][1].items()])})
     df3 = pd.DataFrame(sorted_scoreboard[2][1][2], index=['Kids (variant 3)']).transpose()
     df3.index = pd.to_datetime(df3.index)
-    #df3 = optimise(df3)
+    if globals.optimise:
+        df3 = optimise(df3)
     df3.fillna('', inplace=True)
     #df3 = df3.append({df3.index: 32, df3.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[2][1][1].items()])})
     print(f'Lucky kids: \n {sorted_scoreboard[0][1][1]} \n {sorted_scoreboard[1][1][1]} \n {sorted_scoreboard[2][1][1]}')
