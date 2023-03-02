@@ -8,6 +8,9 @@ from .forms import WaiverdaysForm, DataframeChoice
 import pandas as pd
 import kochlischda.globals as globals
 from .models import Dish
+import os
+from django.conf import settings
+from django.http import FileResponse
 
 
 
@@ -80,6 +83,7 @@ def brewing_the_kochliste(request):
                         df.at[i, 'dish'] = ''
                     else:
                         df.at[i, 'dish'] = str(res[0])
+
                 
         
         ####### fill nan values of weekend days and holidays
@@ -87,7 +91,11 @@ def brewing_the_kochliste(request):
         
         df.to_excel(f'/home/daberer/Documents/Kochliste/{globals.year}_{globals.month}_kochliste.xlsx', sheet_name='Sheet1')
 
-        return HttpResponse(f"successfully produced /home/daberer/Documents/Kochliste/{globals.year}_{globals.month}_kochliste.xlsx")
+        path_to_excel = f'/home/daberer/Documents/Kochliste/{globals.year}_{globals.month}_kochliste.xlsx'
+
+        return FileResponse(open(path_to_excel, 'rb'))
+    
+    
 
     scoreboard = {}
     for i in range(200):
