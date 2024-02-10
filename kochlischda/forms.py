@@ -1,15 +1,12 @@
 from django import forms
 from .models import Kid
 import datetime
+from .globals import Setup
 
-now = datetime.datetime.now()
-year = now.year
-month = now.month
+year = Setup.year
+month = Setup.month
 frame = 1
-if month == 12:
-    month = 1
-else:
-    month+= 1
+
 
 years = (
 (year, year),

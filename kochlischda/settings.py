@@ -35,8 +35,8 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 
-ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
-# ALLOWED_HOSTS = ['127.0.0.1'] setting that works on my windows laptop :)
+#ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
+ALLOWED_HOSTS = ['localhost','0.0.0.0'] #setting that works on my windows laptop :)
 
 
 # Application definition

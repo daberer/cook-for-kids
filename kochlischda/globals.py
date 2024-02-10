@@ -1,8 +1,8 @@
-year = 2023
-month = 4
-
-df1 = None
-df2 = None
-df3 = None
-
-optimise = True
+class Setup:
+    year = 2024
+    month = 3
+    df1 = None
+    df2 = None
+    df3 = None
+    optimise = True
+    trial_number = 60

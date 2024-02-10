@@ -3,7 +3,7 @@ import calendar
 import datetime
 from .models import Kid, Holiday, Waiverday, Dish
 import random
-import kochlischda.globals as globals
+from kochlischda.globals import Setup
 import itertools
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
@@ -95,8 +95,8 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
 
 def calculate_month(it=None):
     # initializing the year and month
-    year = globals.year
-    month = globals.month
+    year = Setup.year
+    month = Setup.month
     num_days = calendar.monthrange(year, month)[1]
 
     # get rid of saturdays and sundays
@@ -165,9 +165,9 @@ def calculate_month(it=None):
                 lucky.append(f'kid:{kid}, luck:{luck}')
                 lucky_kids.append(kid)
         
-        if max_luck > 1 or 'Lucía' in lucky_kids or 'Sophie,Samuel,Johanna' in lucky_kids:
-            print(f'try {it} - Bad solution')
-            return
+        #if max_luck > 1 or 'Lucía' in lucky_kids or 'Sophie,Samuel,Johanna' in lucky_kids:
+        #    print(f'try {it} - Bad solution')
+        #    return
 
         
         print(f'success, luckies: {lucky}')
@@ -183,8 +183,8 @@ def calculate_month(it=None):
         result_dict = dict(sorted(result_dict.items()))
         score = evaluate_result(result_dict, all_days, list(kids_dict.values()))
 
-        if score > 0:
-            return
+        #if score > 0:
+        #    return
 
          
 
@@ -305,8 +305,8 @@ def additional_holidays(days):
     """
     Function that adds new holidays single or in bulk
     """
-    month = globals.month
-    year = globals.year
+    month = Setup.month
+    year = Setup.year
     s_days_array = days.split(',')
     written_to_db = False
 
@@ -361,9 +361,15 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
         current_kid.save()
         res += 'kid updated, '
 
-    if dish:
-        new_dish = Dish(dish_name=dish, cook=kid)
-        new_dish.save()
+    if dish:  
+        dish_object = Dish.objects.filter(cook=kid).first()
+        if dish_object:
+            dish_object.dish_name = dish
+            dish_object.save()
+        
+        else:
+            new_dish = Dish(dish_name=dish, cook=kid)            
+            new_dish.save()
         res+='dish updated'
 
     
@@ -433,12 +439,6 @@ def get_list_of_kids():
 
 
 
-
-         
-            
-
-
-  
 
 
 if __name__ == '__main__':
