@@ -26,7 +26,7 @@ def add_holidays(request):
     """
     #TODO: take admin input
     """
-    state = additional_holidays('1-6')
+    state = additional_holidays('1,9-10,20,30')
     return HttpResponse(state)
 
 def setup_month(request):

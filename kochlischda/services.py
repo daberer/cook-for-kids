@@ -333,7 +333,7 @@ def additional_holidays(days):
                     
                     
             else:
-                day = int(s_days[0])
+                day = int(s_days)
                 this_day = datetime.date(year, month, day)       
                 written_to_db = save_day(this_day)
                 
