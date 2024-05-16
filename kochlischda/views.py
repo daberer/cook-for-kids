@@ -1,15 +1,18 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render, HttpResponse, redirect
 from . import settings
 from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids, check_correctness, optimise
 import os
-from .forms import WaiverdaysForm, DataframeChoice
+from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
 from kochlischda.globals import Setup
 from .models import Dish
 import os
+from django.urls import reverse
 from django.conf import settings
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponseRedirect
+from django.contrib import messages
 import tempfile
+from .globals import Setup
 
 
 def home(request):
@@ -24,14 +27,22 @@ def home(request):
 
 def add_holidays(request):
     """
-    #TODO: take admin input
+    #
     """
-    state = additional_holidays('1,9-10,20,30')
-    return HttpResponse(state)
+    if request.method == 'POST':
+        form = AdditionalHolidaysForm(request.POST)
+        if form.is_valid():
+            dates = form.cleaned_data['dates']
+            state = additional_holidays(dates)
+            return HttpResponse(state)
+        else:
+            print(form.errors.as_data())
+    form = AdditionalHolidaysForm()
+    return render(request, 'additional_holiday_form.html', {'form': form, 'month': Setup.month})
 
 def setup_month(request):
     """
-    #TODO: take user input
+    #
     """
     if request.method == 'POST':
         form = WaiverdaysForm(request.POST)
@@ -44,11 +55,12 @@ def setup_month(request):
             month = form.cleaned_data['month']
             year = form.cleaned_data['year']
             state = additional_waiverdays(days=dates, wishdays=wishdays, kid=list(kid)[0], dishes_this_month=dishes_this_month, month=month, year=year, dish=dish)
-            return HttpResponse(state)
+            messages.success(request, state)
+            return redirect(setup_month)
         else:
-            print(form.errors.as_data()) # here you print errors to terminal
-    
+            messages.error(request, "There was an error with your form submission.")
 
+    
     form = WaiverdaysForm()
     return render(request, 'waiverday_form.html', {'form': form})
     #wishdays = 0
