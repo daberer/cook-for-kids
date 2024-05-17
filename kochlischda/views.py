@@ -145,11 +145,15 @@ def brewing_the_kochliste(request):
 
 
     scoreboard = {}
-    for i in range(Setup.trial_number):
-        res = calculate_month(i)
+    breakout = 1
+    while len(scoreboard) < 3:
+        res = calculate_month(breakout)
         #ro = check_correctness(res)
+        breakout += 1
+        if breakout == Setup.trial_number:
+            return HttpResponse('No three solutions found.') 
         if res:
-            scoreboard[i] = [res[0], res[1], res[2]]
+            scoreboard[breakout] = [res[0], res[1], res[2]]
             
     sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 

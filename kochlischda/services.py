@@ -93,7 +93,7 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
     return potenial_cooks
 
 
-def calculate_month(it=None):
+def calculate_month(it=1):
     # initializing the year and month
     year = Setup.year
     month = Setup.month
@@ -217,86 +217,73 @@ def check_correctness(df):
 
 def optimise(dframe):
     print('optimising..')
+    
     def swap(df, date1, date2):
-        cf = df.copy(deep=True)
-        swapkid = df.at[date1, df.keys()[0]]
-        cf.at[date1, df.keys()[0]] = cf.at[date2, df.keys()[0]]
-        cf.at[date2, df.keys()[0]] = swapkid
-        return cf
+        swapkid = df.at[date1, df.columns[0]]
+        df.at[date1, df.columns[0]] = df.at[date2, df.columns[0]]
+        df.at[date2, df.columns[0]] = swapkid
+        return df
 
     def rate(d, kid1, kid2):
-        """
-        finds max days between first and last occurence
-        finds min rest days between meals
-        """
+        kid1_dates = d[d[d.columns[0]] == kid1].index
+        kid2_dates = d[d[d.columns[0]] == kid2].index
 
-        min_kid1 = d[d[d.keys()[0]] == kid1].index[0].date()
-        max_kid1 = d[d[d.keys()[0]] == kid1].index[-1].date()
+        if kid1_dates.empty or kid2_dates.empty:
+            return float('inf'), float('inf'), float('inf'), float('inf'), float('inf')
 
-        max_days_kid1 = 0
-        if min_kid1 != max_kid1:
-           max_days_kid1 = (max_kid1 - min_kid1).days
+        min_kid1 = kid1_dates[0].date()
+        max_kid1 = kid1_dates[-1].date()
+        min_kid2 = kid2_dates[0].date()
+        max_kid2 = kid2_dates[-1].date()
 
-
-        min_kid2 = d[d[d.keys()[0]] == kid2].index[0].date()
-        max_kid2 = d[d[d.keys()[0]] == kid2].index[-1].date()
-
-        max_days_kid2 = 0
-        if min_kid2 != max_kid2:
-           max_days_kid2 = (max_kid2 - min_kid2).days
+        max_days_kid1 = (max_kid1 - min_kid1).days if min_kid1 != max_kid1 else 0
+        max_days_kid2 = (max_kid2 - min_kid2).days if min_kid2 != max_kid2 else 0
         sum_max = max_days_kid1 + max_days_kid2
-        kid1_min_rest_days = d[d[d.keys()[0]].eq(kid1)].groupby(d.keys()[0]).diff().index.to_series().diff().min().days
-        kid1_mean_rest_days = d[d[d.keys()[0]].eq(kid1)].groupby(d.keys()[0]).diff().index.to_series().diff().mean().days
-        kid2_min_rest_days = d[d[d.keys()[0]].eq(kid2)].groupby(d.keys()[0]).diff().index.to_series().diff().min().days
-        kid2_mean_rest_days = d[d[d.keys()[0]].eq(kid2)].groupby(d.keys()[0]).diff().index.to_series().diff().mean().days
+
+        kid1_diff = kid1_dates.to_series().diff().dt.days
+        kid1_min_rest_days = kid1_diff.min()
+        kid1_mean_rest_days = kid1_diff.mean()
+        
+        kid2_diff = kid2_dates.to_series().diff().dt.days
+        kid2_min_rest_days = kid2_diff.min()
+        kid2_mean_rest_days = kid2_diff.mean()
 
         return sum_max, kid1_min_rest_days, kid2_min_rest_days, kid1_mean_rest_days, kid2_mean_rest_days
 
-
-
     def run_loop(df):
-        for i, row in df.iterrows():
-            kid1 = df.at[i, df.keys()[0]]
+        for i in df.index:
+            kid1 = df.at[i, df.columns[0]]
 
-
-            if not row[0]:
+            if not kid1:
                 continue
-            r = i
-            breakout = 0
-            while i == r:
-                breakout+=1
-                if breakout == 100:
-                    break
-                r = df.index[random.randint(0, len(df)-1)]
-                kid2 = df.at[r, df.keys()[0]]
-                if kid1 == kid2 or kid2 is None:
-                    r = i
-                    continue
-                # check waiverdays 
-                # Problem if Waiverday.object does not exist -> therefore try statements
-                try:
-                    waiverday1 = Waiverday.objects.get(date=i).kid.all()
-                except Waiverday.DoesNotExist:
-                    waiverday1 = []
-                try:
-                    waiverday2 = Waiverday.objects.get(date=r).kid.all()
-                except Waiverday.DoesNotExist:
-                    waiverday2 = []
-                try:
-                    if Kid.objects.get(name=kid2) in waiverday1 or Kid.objects.get(name=kid1) in waiverday2:
-                        r = i
-                except Exception as e:
-                    print(f'error {e}, -kid1{kid1}, -kid2{kid2}')
 
+            for _ in range(100):
+                r = df.index[random.randint(0, len(df) - 1)]
+                kid2 = df.at[r, df.columns[0]]
+                if kid1 != kid2 and kid2:
+                    try:
+                        waiverday1 = Waiverday.objects.get(date=i).kid.all()
+                    except Waiverday.DoesNotExist:
+                        waiverday1 = []
+                    try:
+                        waiverday2 = Waiverday.objects.get(date=r).kid.all()
+                    except Waiverday.DoesNotExist:
+                        waiverday2 = []
 
-            to_1, k1_1, k2_1, km1_1, km2_1 = rate(df, df.at[i, df.keys()[0]], df.at[r, df.keys()[0]])
-            kf = swap(df, i, r)
-            to_2, k1_2, k2_2, km1_2, km2_2 = rate(kf, df.at[i, df.keys()[0]], df.at[r, df.keys()[0]])
+                    if (Kid.objects.get(name=kid2) not in waiverday1 and
+                        Kid.objects.get(name=kid1) not in waiverday2):
+                        break
+            else:
+                continue
+
+            to_1, k1_1, k2_1, km1_1, km2_1 = rate(df, kid1, kid2)
+            kf = swap(df.copy(), i, r)
+            to_2, k1_2, k2_2, km1_2, km2_2 = rate(kf, kid1, kid2)
             if to_2 >= to_1 and k1_2 >= k1_1 and k2_2 >= k2_1 and km1_2 >= km1_1 and km2_2 >= km2_1:
                 df = kf
         return df
 
-    for i in range(50):
+    for _ in range(50):
         dframe = run_loop(dframe)
     return dframe
 
