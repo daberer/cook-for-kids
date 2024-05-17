@@ -36,6 +36,9 @@ class Holiday(models.Model):
 class Waiverday(models.Model):
     date = models.DateField()
     kid = models.ManyToManyField(Kid, related_name="waiverdaykids")
+
+    class Meta:
+        ordering = ['-date']
     
     def __str__(self):
         return str(self.date)

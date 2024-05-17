@@ -1,17 +1,17 @@
 from django.shortcuts import render, HttpResponse, redirect
 from . import settings
 from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids, check_correctness, optimise
-import os
+import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
 from kochlischda.globals import Setup
 from .models import Dish
-import os
+
 from django.urls import reverse
 from django.conf import settings
 from django.http import FileResponse, HttpResponseRedirect
 from django.contrib import messages
-import tempfile
+
 from .globals import Setup
 
 
@@ -71,6 +71,25 @@ def setup_month(request):
 
 def brewing_the_kochliste(request):
     if request.method == "POST":
+        swap_data = request.POST.get('swapData')
+        if swap_data:
+            swap_data = json.loads(swap_data)
+            # Load your DataFrames here or define them as needed
+            df1 = Setup.df1  # Load or define your first DataFrame
+            df2 = Setup.df2  # Load or define your second DataFrame
+            df3 = Setup.df3  # Load or define your third DataFrame
+
+            # Update only the first column with swapped data
+            if 'df1' in swap_data:
+                df1.iloc[:, 0] = swap_data['df1']
+            if 'df2' in swap_data:
+                df2.iloc[:, 0] = swap_data['df2']
+            if 'df3' in swap_data:
+                df3.iloc[:, 0] = swap_data['df3']
+            form = DataframeChoice()
+            return render(request, 'result_form.html', {'resulttable1': df1.to_html(classes="dataframe dfirst"), 'resulttable2': df2.to_html(classes="dataframe dsecond"), 'resulttable3': df3.to_html(classes="dataframe dthird"), 'form': form})
+
+
         form = DataframeChoice(request.POST)
         if form.is_valid(): 
             onetwothree = form.cleaned_data['df_number']
@@ -103,42 +122,6 @@ def brewing_the_kochliste(request):
         
         path_to_csv = f'/home/daberer/Documents/Kochliste/{Setup.year}_{Setup.month}_kochliste.csv'
         df.to_csv(path_to_csv, sep=",", index=False, header=None)
-        # temp_path = tempfile.mkdtemp()
-
-        # path_to_excel = os.path.join(temp_path, f'{Setup.year}_{Setup.month}_kochliste.xlsx')
-        # # Create a Pandas Excel writer using XlsxWriter as the engine.
-        # writer = pd.ExcelWriter(path_to_excel, engine='xlsxwriter')
-
-        # # Write the dataframe data to XlsxWriter. Turn off the default header and
-        # # index and skip one row to allow us to insert a user defined header.
-        # df.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False, index=False)
-
-        
-
-        # # Get the xlsxwriter workbook and worksheet objects.
-        # workbook = writer.book
-        # worksheet = writer.sheets['Sheet1']
-
-
-        # # Get the dimensions of the dataframe.
-        # (max_row, max_col) = df.shape
-        
-        # # Create a list of column headers, to use in add_table().
-        # column_settings = [{'header': column} for column in df.columns]
-
-        # # Add the Excel table structure. Pandas will add the data.
-        # worksheet.add_table(0, 0, max_row, max_col - 1, {'columns': column_settings})
-
-        # text_format = workbook.add_format({'text_wrap' : True})
-
-        # # Make the columns wider for clarity.
-        # worksheet.set_column(0, 0, 20)
-        # worksheet.set_column(1, 1, 20)
-        # worksheet.set_column(1, 2, 60, text_format)
-
-
-        # # Close the Pandas Excel writer and output the Excel file.
-        # writer.close()
 
         return FileResponse(open(path_to_csv, 'rb'))
     
@@ -182,5 +165,4 @@ def brewing_the_kochliste(request):
     Setup.df3 = df3
 
     form = DataframeChoice()
-    #return HttpResponse(df.to_html())
     return render(request, 'result_form.html', {'resulttable1': df1.to_html(classes="dataframe dfirst"), 'resulttable2': df2.to_html(classes="dataframe dsecond"), 'resulttable3': df3.to_html(classes="dataframe dthird"), 'form': form})

@@ -5,4 +5,4 @@ class Setup:
     df2 = None
     df3 = None
     optimise = True
-    trial_number = 60
+    trial_number = 120

@@ -10,6 +10,15 @@
   {% bootstrap_javascript %}
   <meta charset="utf-8">
   <title>{% block title %}Django Auth Tutorial{% endblock %}</title>
+  <style>
+    .button-container {
+        width: 20%;
+        margin: 0 auto; /* Center the buttons container */
+    }
+    .btn {
+        width: 100%;
+    }
+</style>
 </head>
 <body>
   <main>
@@ -18,16 +27,16 @@
   </main>
   <div class="container my-5">
     <div class="row">
-      <div class="col-12 text-center">
-        <h1 class="mb-4">Kochlischda navigate</h1>
-        <div class="d-grid gap-3">
-          <a href="admin/" class="btn btn-primary">Admin Page</a>
-          <a href="start/" class="btn btn-secondary">Start</a>
-          <a href="addholidays/" class="btn btn-success">Add Holidays</a>
-          <a href="setup-month/" class="btn btn-danger">Setup Month</a>
+        <div class="col-12 text-center">
+            <h1 class="mb-4">Kochlischda navigate</h1>
+            <div class="button-container d-grid gap-3">
+                <a href="admin/" class="btn btn-primary">Admin Page</a>
+                <a href="start/" class="btn btn-danger">Start</a>
+                <a href="addholidays/" class="btn btn-success">Add Holidays</a>
+                <a href="setup-month/" class="btn btn-warning">Setup Month</a>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
+</div>
 </body>
 </html>
