@@ -119,6 +119,13 @@ def calculate_month(it=1):
     kids = Kid.objects.all()
     kids_dict = {k.name: k.monthly_dishes for k in kids}
 
+    # check if enough kochdienste for this month
+    kochdienste = sum(kids_dict.values())
+    kochtage = len(result_dict)
+    if  kochdienste < kochtage :
+        print(f'Not enough Kochdienste ({kochdienste}), for {kochtage} Kochtage this month.')
+        return
+
     def go_cooking(first=None, second=None):
         for key in result_dict:
             if result_dict[key] == '':

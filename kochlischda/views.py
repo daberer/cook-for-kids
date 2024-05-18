@@ -75,9 +75,9 @@ def brewing_the_kochliste(request):
         if swap_data:
             swap_data = json.loads(swap_data)
             # Load your DataFrames here or define them as needed
-            df1 = Setup.df1  # Load or define your first DataFrame
-            df2 = Setup.df2  # Load or define your second DataFrame
-            df3 = Setup.df3  # Load or define your third DataFrame
+            df1 = Setup.df1  
+            df2 = Setup.df2  
+            df3 = Setup.df3 
 
             # Update only the first column with swapped data
             if 'df1' in swap_data:
@@ -94,11 +94,11 @@ def brewing_the_kochliste(request):
         if form.is_valid(): 
             onetwothree = form.cleaned_data['df_number']
         if onetwothree == '1':
-            df = Setup.df1
+            df = Setup.df1.copy(deep=True)
         elif onetwothree == '2':
-            df = Setup.df2
+            df = Setup.df2.copy(deep=True)
         else:
-            df = Setup.df3
+            df = Setup.df3.copy(deep=True)
         
         df['dish'] = ''
         df.rename(columns={df.keys()[0]: "kid"}, inplace=True)
