@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
 from . import settings
-from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids, check_correctness, optimise
+from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids, check_correctness_df, optimise
 import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
@@ -9,7 +9,7 @@ from .models import Dish
 
 from django.urls import reverse
 from django.conf import settings
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpResponseRedirect, JsonResponse
 from django.contrib import messages
 
 from .globals import Setup
@@ -68,6 +68,27 @@ def setup_month(request):
     #this_kid = kids_list[3]
     #state = additional_notdays('15-31', wishdays=wishdays, kid=this_kid)
     #return HttpResponse(state)
+
+def check_results(request):
+    if request.method == "POST":
+        swap_data = request.POST.get('swapData')
+        if swap_data == '':
+            response = {'message': 'No changes in the results - table!'}
+            return JsonResponse(response, status=200)
+        else:
+            swap_data = json.loads(swap_data)
+            # Load your DataFrames here or define them as needed
+            df1 = Setup.df1  
+            df2 = Setup.df2  
+            df3 = Setup.df3 
+            if 'df1' in swap_data:
+                df1.iloc[:, 0] = swap_data['df1']
+            if 'df2' in swap_data:
+                df2.iloc[:, 0] = swap_data['df2']
+            if 'df3' in swap_data:
+                df3.iloc[:, 0] = swap_data['df3']
+            response = {'message': f'for df1: {check_correctness_df(df1)}, for df2: {check_correctness_df(df2)}, for df3: {check_correctness_df(df3)}'}
+            return JsonResponse(response, status=200)
 
 def brewing_the_kochliste(request):
     if request.method == "POST":

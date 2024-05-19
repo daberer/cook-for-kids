@@ -39,6 +39,8 @@
       </div>
       <input type="hidden" id="swapData" name="swapData" value="">
     </form>
+    <button id="asyncButton" class="btn btn-success">check</button>
+    <span id="responseMessage"></span>
   </div>
 
   <script>
@@ -85,6 +87,24 @@
 
         $('#swapData').val(JSON.stringify(data));
       }
+
+      $('#asyncButton').on('click', function() {
+        const data = $('#swapData').val();
+        $.ajax({
+          type: 'POST',
+          url: '/check-results/', // Update with your backend URL
+          data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            swapData: data
+          },
+          success: function(response) {
+            $('#responseMessage').text(response.message);
+          },
+          error: function(xhr, status, error) {
+            $('#responseMessage').text('An error occurred: ' + error);
+          }
+        });
+      });
     });
   </script>
 </body>

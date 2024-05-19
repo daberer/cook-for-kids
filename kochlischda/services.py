@@ -222,6 +222,23 @@ def check_correctness(df):
             pass
     return False
 
+def check_correctness_df(df):
+    """
+    Quick check if current dataframe has entries that are in conflict with the Waiverday table
+    """
+    for i, row in df.iterrows():
+        if row[0] == '':
+            continue
+        try:
+            a = Waiverday.objects.get(date=(i))
+        except Exception:
+            continue
+        k = Kid.objects.get(name=row[0])
+        kids = a.kid.all()
+        if k in kids:
+            return (f'{row[0]} has a waiverday on {i}!')
+    return 'All good.'
+
 def optimise(dframe):
     print('optimising..')
     
