@@ -54,7 +54,7 @@ def setup_month(request):
             wishdays = form.cleaned_data['wishdays']
             month = form.cleaned_data['month']
             year = form.cleaned_data['year']
-            state = additional_waiverdays(days=dates, wishdays=wishdays, kid=list(kid)[0], dishes_this_month=dishes_this_month, month=month, year=year, dish=dish)
+            state = additional_waiverdays(days=dates, wishdays=wishdays, kid=kid, dishes_this_month=dishes_this_month, month=month, year=year, dish=dish)
             messages.success(request, state)
             return redirect(setup_month)
         else:
