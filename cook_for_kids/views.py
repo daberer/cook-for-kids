@@ -4,7 +4,7 @@ from .services import calculate_month, additional_holidays, additional_waiverday
 import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
-from kochlischda.globals import Setup
+from cook_for_kids.globals import Setup
 from .models import Dish
 
 from django.urls import reverse

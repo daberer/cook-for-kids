@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('kochlischda', '0008_remove_notday_kid_kid_notday'),
+        ('cook_for_kids', '0008_remove_notday_kid_kid_notday'),
     ]
 
     operations = [
@@ -17,6 +17,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='notday',
             name='kid',
-            field=models.ManyToManyField(related_name='notdaykids', to='kochlischda.kid'),
+            field=models.ManyToManyField(related_name='notdaykids', to='cook_for_kids.kid'),
         ),
     ]

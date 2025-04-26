@@ -3,7 +3,7 @@ import calendar
 import datetime
 from .models import Kid, Holiday, Waiverday, Dish
 import random
-from kochlischda.globals import Setup
+from cook_for_kids.globals import Setup
 import itertools
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
