@@ -1,7 +1,11 @@
 
-# cook-for-kids
+# Cook-for-kids
 
-A Django application for managing kids' meal planning and scheduling.
+**Cook-for-kids** is an application developed to help parents of a kindergarten group rotate monthly meal duties. This tool simplifies the organization and scheduling of meal preparation responsibilities among parents.
+
+## Overview
+
+![Cook-for-kids Start Page](startpage.png)
 
 ## Setup Instructions
 
