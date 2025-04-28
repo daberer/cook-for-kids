@@ -12,7 +12,7 @@ class Kid(models.Model):
     name = models.CharField(max_length=25)
     exempt = models.BooleanField()
     monthly_dishes = models.IntegerField()
-    score = models.IntegerField()
+    #score = models.IntegerField()
 
     def __str__(self):
         return self.name 
