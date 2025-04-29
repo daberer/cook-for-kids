@@ -25,10 +25,6 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
            week = []
 
 
-
-
-
-
     # sequences
     li = list(result.values())
     for i, l in enumerate(li):
@@ -93,11 +89,14 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
     return potenial_cooks
 
 
-def calculate_month(it=1):
+def calculate_month(it=1, test=False):
     # initializing the year and month
     year = Setup.year
     month = Setup.month
+    if test:
+        year, month = 2025, 5
     num_days = calendar.monthrange(year, month)[1]
+        
 
     # get rid of saturdays and sundays
     all_days = [datetime.date(year, month, day)

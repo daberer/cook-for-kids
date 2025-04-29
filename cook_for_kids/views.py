@@ -21,9 +21,6 @@ def home(request):
 def base(request):
     return render(request, 'base.html')
 
-def home(request):
-    return render(request, 'StaticPages/main.html')
-
 
 def add_holidays(request):
     """
