@@ -1,6 +1,8 @@
 
 # Cook-for-kids
 
+[![Django Tests](https://github.com/daberer/cook-for-kids/actions/workflows/django-tests.yml/badge.svg)](https://github.com/daberer/cook-for-kids/actions/workflows/django-tests.yml)
+
 **Cook-for-kids** is an application developed to help parents of a kindergarten group rotate monthly meal duties. This tool simplifies the organization and scheduling of meal preparation responsibilities among parents.
 
 ## Overview
