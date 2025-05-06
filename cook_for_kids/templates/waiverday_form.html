@@ -1,5 +1,6 @@
 {% load static %}
 {% load bootstrap5 %}
+{% load custom_filters %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -138,22 +139,25 @@
     </div>
 
     <!-- Simple vanilla JavaScript to update form fields -->
+    
     <script>
         // Kid data for each kid (will be populated by Django)
         var kidData = {
             {% for kid in form.kid.field.queryset %}
                 {{ kid.id }}: {
-                    "dish": "{{ kid.dish_set.last.dish_name|default:'' }}",
-                    "monthly_dishes": {{ kid.monthly_dishes|default:0 }}
+                    "dish": "{{ kid.dish_set.first.dish_name|default:'' }}",
+                    "monthly_dishes": {{ kid.monthly_dishes|default:0 }},
+                    "dates": "{{ kid_dates_dict|get_item:kid.id|default:'' }}"
                 },
             {% endfor %}
         };
-
+    
         // Get form elements
         var kidSelect = document.getElementById('id_kid');
         var dishInput = document.getElementById('id_dish');
         var dishesThisMonthInput = document.getElementById('id_dishes_this_month');
-
+        var datesInput = document.getElementById('id_dates');
+    
         // Add event listener to kid select
         if (kidSelect) {
             kidSelect.addEventListener('change', function() {
@@ -162,7 +166,7 @@
         } else {
             console.error("Kid select element not found!");
         }
-
+    
         // Function to update form fields
         function updateKidInfo() {
             var selectedKidId = kidSelect.value;
@@ -170,11 +174,14 @@
             if (selectedKidId && kidData[selectedKidId]) {
                 dishInput.value = kidData[selectedKidId].dish || '';
                 dishesThisMonthInput.value = kidData[selectedKidId].monthly_dishes || '';
+                datesInput.value = kidData[selectedKidId].dates || '';
             } else {
                 dishInput.value = '';
                 dishesThisMonthInput.value = '';
+                datesInput.value = '';
             }
         }
     </script>
+    
 </body>
 </html>

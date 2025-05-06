@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
 from . import settings
-from .services import calculate_month, additional_holidays, additional_waiverdays, get_cooking_schedule, check_correctness_df, optimise, num_days_in_month
+from .services import calculate_month, additional_holidays, additional_waiverdays, get_cooking_schedule, check_correctness_df, optimise, num_days_in_month, get_kid_dates_dict
 import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
@@ -59,10 +59,12 @@ def setup_month(request):
 
     num_days = num_days_in_month(Setup.year, Setup.month)
     cooking_data = get_cooking_schedule(Setup.year, Setup.month, num_days)
+    kid_dates_dict = get_kid_dates_dict(Setup.year, Setup.month)
     form = WaiverdaysForm()
     return render(request, 'waiverday_form.html', {
         'form': form,
-        'cooking_data': cooking_data
+        'cooking_data': cooking_data,
+        'kid_dates_dict': kid_dates_dict
     })
 
 def check_results(request):

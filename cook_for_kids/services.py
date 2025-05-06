@@ -371,10 +371,7 @@ def additional_holidays(days):
             else:
                 day = int(s_days)
                 this_day = datetime.date(year, month, day)       
-                written_to_db = save_day(this_day)
-                
-
-                      
+                written_to_db = save_day(this_day)    
             
 
     except Exception as e:
@@ -383,6 +380,7 @@ def additional_holidays(days):
     if written_to_db:
         return 'success'
     return 'Holiday(s) were already in database'
+
 
 def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None, dish=None):
     """
@@ -397,7 +395,6 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
         current_kid.monthly_dishes = dishes_this_month
         current_kid.save()
         res += 'kid updated, '
-
 
     dish_object = Dish.objects.filter(cook=kid).first()
     if dish_object:
@@ -414,11 +411,13 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
     year = int(year)
 
     if days == '':
-        res += ' No days specified'
-        return res
+        Waiverday.objects.filter(
+            date__year=year,
+            date__month=month,
+            kid=kid
+        ).delete()
+        return f'Waiverdays for {kid} deleted'
 
-    
-    
 
     num_days = calendar.monthrange(year, month)[1]
     all_days = [day for day in range(1, num_days+1)]
@@ -475,8 +474,52 @@ def get_list_of_kids():
     return [kid for kid in Kid.objects.all()]
 
 
+def get_kid_dates_dict(selected_year, selected_month):
+    kid_dates_dict = {}
+    for kid in Kid.objects.all():
+        # Get waiver days for this kid in the selected month
+        waiver_days = []
+        for waiverday in kid.waiverdaykids.filter(
+            date__year=selected_year, 
+            date__month=selected_month
+        ).order_by('date'):
+            waiver_days.append(waiverday.date.day)
+
+        # Format the dates as a string (e.g., "1, 5, 10-15")
+        formatted_dates = format_date_ranges(waiver_days)
+        kid_dates_dict[str(kid.id)] = formatted_dates
+    return kid_dates_dict
 
 
+def format_date_ranges(days):
+    """Format a list of days into a string with ranges.
+    Example: [1, 2, 3, 5, 8, 9, 10] becomes "1-3, 5, 8-10"
+    """
+    if not days:
+        return ""
+
+    days.sort()
+    ranges = []
+    start = days[0]
+    end = days[0]
+
+    for i in range(1, len(days)):
+        if days[i] == end + 1:
+            end = days[i]
+        else:
+            if start == end:
+                ranges.append(str(start))
+            else:
+                ranges.append(f"{start}-{end}")
+            start = end = days[i]
+
+    # Add the last range
+    if start == end:
+        ranges.append(str(start))
+    else:
+        ranges.append(f"{start}-{end}")
+
+    return ", ".join(ranges)
 
 if __name__ == '__main__':
     calculate_month()
