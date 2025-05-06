@@ -89,38 +89,77 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
     return potenial_cooks
 
 
+def num_days_in_month(year, month):
+    return calendar.monthrange(year, month)[1]
+
+
+def get_cooking_schedule(year, month, num_days):
+    """
+    Generate cooking schedule data for a given month, excluding weekends and holidays.
+
+    Parameters:
+    - year (int): The year
+    - month (int): The month (1-12)
+    - num_days (int): Number of days in the month
+
+    Returns:
+    - dict: A tuple containing:
+        - result_dict: Dictionary with available cooking days as keys and empty strings as values
+        - block_dict: Dictionary with available cooking days as keys and empty lists as values
+        - kids_dict: Dictionary with kid names as keys and their monthly dishes as values
+        - kochdienste: Total number of cooking duties assigned to all kids
+        - kochtage: Number of available cooking days in the month
+    """
+
+    # Get all days in the month and filter out weekends (Saturday=5, Sunday=6)
+    all_days = [datetime.date(year, month, day) for day in range(1, num_days+1)]
+    day_objects = [day for day in all_days if day.weekday() not in (5, 6)]
+
+    # Filter out holidays
+    holidays_all = list(Holiday.objects.all())
+    holidays_current = [ho.date for ho in holidays_all if (
+        ho.date.year == year and ho.date.month == month)]
+
+    # Create dictionaries for available cooking days
+    result_dict = {day: '' for day in day_objects if day not in holidays_current}
+    block_dict = {day: [] for day in day_objects if day not in holidays_current}
+
+    # Get kids and their monthly cooking duties
+    kids = Kid.objects.all()
+    kids_dict = {k.name: k.monthly_dishes for k in kids}
+
+    # Calculate totals for cooking duties and available days
+    kochdienste = sum(kids_dict.values())
+    kochtage = len(result_dict)
+
+    return {
+        'result_dict': result_dict,
+        'block_dict': block_dict,
+        'kids_dict': kids_dict,
+        'kochdienste': kochdienste,
+        'kochtage': kochtage,
+        'all_days': all_days
+    }
+
+
 def calculate_month(it=1, test=False):
     # initializing the year and month
     year = Setup.year
     month = Setup.month
     if test:
         year, month = 2025, 5
-    num_days = calendar.monthrange(year, month)[1]
+
+    num_days = num_days_in_month(year, month) 
         
+    cooking_data = get_cooking_schedule(year, month, num_days)
 
-    # get rid of saturdays and sundays
-    all_days = [datetime.date(year, month, day)
-                              for day in range(1, num_days+1)]
-    day_objects = [datetime.date(year, month, day) for day in range(
-        1, num_days+1) if datetime.date(year, month, day).weekday() not in (5, 6)]
+    kochdienste = cooking_data['kochdienste']
+    kochtage = cooking_data['kochtage']
+    block_dict = cooking_data['block_dict']
+    all_days = cooking_data['all_days']
+    
 
-    # get rid of holidays
-    holidays_all = list(Holiday.objects.all())
-    holidays_current = [ho.date for ho in holidays_all if (
-        ho.date.year == year and ho.date.month == month)]
-    # days_active = [day for day in day_objects if day not in (holidays_current)]
-    result_dict = {
-        day: '' for day in day_objects if day not in (holidays_current)}
-    block_dict = {day: []
-        for day in day_objects if day not in (holidays_current)}
-
-    # get Kids
-    kids = Kid.objects.all()
-    kids_dict = {k.name: k.monthly_dishes for k in kids}
-
-    # check if enough kochdienste for this month
-    kochdienste = sum(kids_dict.values())
-    kochtage = len(result_dict)
+    
     if  kochdienste < kochtage :
         print(f'Not enough Kochdienste ({kochdienste}), for {kochtage} Kochtage this month.')
         return
@@ -170,16 +209,8 @@ def calculate_month(it=1, test=False):
                     max_luck = luck
                 lucky.append(f'kid:{kid}, luck:{luck}')
                 lucky_kids.append(kid)
-        
-        #if max_luck > 1 or 'Lucía' in lucky_kids or 'Sophie,Samuel,Johanna' in lucky_kids:
-        #    print(f'try {it} - Bad solution')
-        #    return
-
-        
+                
         print(f'success, luckies: {lucky}')
-
-
-        
         
         # fill up month
         for day in all_days:
@@ -188,11 +219,6 @@ def calculate_month(it=1, test=False):
         
         result_dict = dict(sorted(result_dict.items()))
         score = evaluate_result(result_dict, all_days, list(kids_dict.values()))
-
-        #if score > 0:
-        #    return
-
-         
 
         kids_dict = {k: v for k,v in kids_dict.items() if v != 0}
         return score, kids_dict, {key.strftime("%m/%d/%Y"): value for key, value in result_dict.items()}
@@ -365,22 +391,23 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
     res = ''
     if not kid:
         return 'No kid specified'
-    if dishes_this_month:
+
+    if dishes_this_month is not None:
         current_kid = Kid.objects.filter(name=kid).first()
         current_kid.monthly_dishes = dishes_this_month
         current_kid.save()
         res += 'kid updated, '
 
-    if dish:  
-        dish_object = Dish.objects.filter(cook=kid).first()
-        if dish_object:
-            dish_object.dish_name = dish
-            dish_object.save()
-        
-        else:
-            new_dish = Dish(dish_name=dish, cook=kid)            
-            new_dish.save()
-        res+='dish updated'
+
+    dish_object = Dish.objects.filter(cook=kid).first()
+    if dish_object:
+        dish_object.dish_name = dish
+        dish_object.save()
+    
+    else:
+        new_dish = Dish(dish_name=dish, cook=kid)            
+        new_dish.save()
+    res+='dish updated'
 
     
     month = int(month)

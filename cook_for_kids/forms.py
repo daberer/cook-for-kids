@@ -36,14 +36,16 @@ ONETWOTHREE=((1, 'ONE'),
 class WaiverdaysForm(forms.Form):
     year = forms.ChoiceField(choices=years)
     month = forms.ChoiceField(choices=MONTHS, initial=str(month))
-    # Use a basic queryset initially
     kid = forms.ModelChoiceField(
-        queryset=Kid.objects.none(),  # Empty queryset initially
-        widget=forms.Select(attrs={'size': 10})  # Default reasonable size
+        queryset=Kid.objects.none(),
+        widget=forms.Select(attrs={'size': 10, 'id': 'id_kid'})  # Ensure it has an ID
     )
     dish = forms.CharField(
         required=False, 
-        widget=forms.TextInput(attrs={'placeholder': 'e.g.: Dinkelwurstnudeln, vegetarische Laibchen, Hühnerfleisch, Rohkost + Schokolade und Vanille Pudding'})
+        widget=forms.TextInput(attrs={
+            'placeholder': 'e.g.: Dinkelwurstnudeln, vegetarische Laibchen, Hühnerfleisch, Rohkost + Schokolade und Vanille Pudding',
+            'id': 'id_dish'
+        })
     )
     dates = forms.CharField(
         required=False, 
@@ -51,13 +53,15 @@ class WaiverdaysForm(forms.Form):
     )
     dishes_this_month = forms.IntegerField(
         required=False, 
-        widget=forms.TextInput(attrs={'placeholder': 'Number of meals to cook this month'})
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Number of meals to cook this month',
+            'id': 'id_dishes_this_month'
+        })
     )
     wishdays = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set the queryset and widget size at runtime
         try:
             from .models import Kid
             kids = Kid.objects.all()
@@ -66,6 +70,7 @@ class WaiverdaysForm(forms.Form):
         except Exception as e:
             # Handle database errors gracefully
             pass
+
 
 
 
