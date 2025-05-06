@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
 from . import settings
-from .services import calculate_month, additional_holidays, additional_waiverdays, get_list_of_kids, check_correctness_df, optimise
+from .services import calculate_month, additional_holidays, additional_waiverdays, get_cooking_schedule, check_correctness_df, optimise, num_days_in_month, get_kid_dates_dict
 import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
@@ -57,14 +57,15 @@ def setup_month(request):
         else:
             messages.error(request, "There was an error with your form submission.")
 
-    
+    num_days = num_days_in_month(Setup.year, Setup.month)
+    cooking_data = get_cooking_schedule(Setup.year, Setup.month, num_days)
+    kid_dates_dict = get_kid_dates_dict(Setup.year, Setup.month)
     form = WaiverdaysForm()
-    return render(request, 'waiverday_form.html', {'form': form})
-    #wishdays = 0
-    #kids_list = get_list_of_kids()
-    #this_kid = kids_list[3]
-    #state = additional_notdays('15-31', wishdays=wishdays, kid=this_kid)
-    #return HttpResponse(state)
+    return render(request, 'waiverday_form.html', {
+        'form': form,
+        'cooking_data': cooking_data,
+        'kid_dates_dict': kid_dates_dict
+    })
 
 def check_results(request):
     if request.method == "POST":

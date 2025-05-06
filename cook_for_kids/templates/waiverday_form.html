@@ -1,5 +1,6 @@
 {% load static %}
 {% load bootstrap5 %}
+{% load custom_filters %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -9,7 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup Month</title>
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.0/css/bootstrap.min.css" rel="stylesheet">
+    
 
     <style>
         /* Your custom button styles */
@@ -56,6 +57,19 @@
         .form-group select {
             font-size: large;
         }
+
+        .cooking-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+
+        .cooking-info.warning {
+            border-left-color: #dc3545;
+            background-color: #fff8f8;
+        }
     </style>
 </head>
 
@@ -73,6 +87,23 @@
     </div>
     <div id="id_long_desc" class="container">
         <h2 class="header">Setup Month</h2>
+
+        <!-- Cooking services information -->
+        {% if cooking_data %}
+        <div class="cooking-info {% if cooking_data.kochdienste < cooking_data.kochtage %}warning{% endif %}">
+            <h5>Cooking Services Status:</h5>
+            <p>This month requires <strong>{{ cooking_data.kochtage }}</strong> cooking services.</p>
+            <p>Currently <strong>{{ cooking_data.kochdienste }}</strong> cooking services are available.</p>
+            {% if cooking_data.kochdienste < cooking_data.kochtage %}
+            <p class="text-danger"><strong>Warning:</strong> Not enough cooking services available for this month!</p>
+            {% elif cooking_data.kochdienste > cooking_data.kochtage %}
+            <p class="text-success">Extra cooking services available this month.</p>
+            {% else %}
+            <p class="text-success">Perfect match! Cooking services match exactly what's needed.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <form action="" method="post">
             {% csrf_token %}
             <div class="form-group">
@@ -107,8 +138,50 @@
         <button class="btn btn-primary" onclick="location.href='/'">Home</button>
     </div>
 
-    <!-- Include Bootstrap Bundle JS (with Popper) -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.0/js/bootstrap.bundle.min.js"></script>
-</body>
+    <!-- Simple vanilla JavaScript to update form fields -->
+    
+    <script>
+        // Kid data for each kid (will be populated by Django)
+        var kidData = {
+            {% for kid in form.kid.field.queryset %}
+                {{ kid.id }}: {
+                    "dish": "{{ kid.dish_set.first.dish_name|default:'' }}",
+                    "monthly_dishes": {{ kid.monthly_dishes|default:0 }},
+                    "dates": "{{ kid_dates_dict|get_item:kid.id|default:'' }}"
+                },
+            {% endfor %}
+        };
+    
+        // Get form elements
+        var kidSelect = document.getElementById('id_kid');
+        var dishInput = document.getElementById('id_dish');
+        var dishesThisMonthInput = document.getElementById('id_dishes_this_month');
+        var datesInput = document.getElementById('id_dates');
+    
+        // Add event listener to kid select
+        if (kidSelect) {
+            kidSelect.addEventListener('change', function() {
+                updateKidInfo();
+            });
+        } else {
+            console.error("Kid select element not found!");
+        }
+    
+        // Function to update form fields
+        function updateKidInfo() {
+            var selectedKidId = kidSelect.value;
 
+            if (selectedKidId && kidData[selectedKidId]) {
+                dishInput.value = kidData[selectedKidId].dish || '';
+                dishesThisMonthInput.value = kidData[selectedKidId].monthly_dishes || '';
+                datesInput.value = kidData[selectedKidId].dates || '';
+            } else {
+                dishInput.value = '';
+                dishesThisMonthInput.value = '';
+                datesInput.value = '';
+            }
+        }
+    </script>
+    
+</body>
 </html>
