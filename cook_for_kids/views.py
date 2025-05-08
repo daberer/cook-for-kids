@@ -16,10 +16,9 @@ from .globals import Setup
 
 
 def home(request):
-    return render(request, 'home.html')
-
-def base(request):
-    return render(request, 'base.html')
+    num_days = num_days_in_month(Setup.year, Setup.month)
+    cooking_data = get_cooking_schedule(Setup.year, Setup.month, num_days)
+    return render(request, 'home.html', {'cooking_data': cooking_data})
 
 
 def add_holidays(request):
@@ -121,9 +120,13 @@ def brewing_the_kochliste(request):
         
         df['dish'] = ''
         df.rename(columns={df.keys()[0]: "kid"}, inplace=True)
+
+        # Filter out rows where the index starts with "SubBench"
+        df = df[~df.index.astype(str).str.startswith('SubBench')]
+        df.index = pd.to_datetime(df.index, format='%d/%m/%Y')
         for i, row in df.iterrows():
             if row.kid != '':
-                if row.name.day_of_week == 1:
+                if row.name.day_of_week == 1 and Setup.tuesday_excursion_day:
                     df.at[i, 'dish'] = 'Essen to go (Ausflugsessen)'
                 else:
                     res = [x for x in Dish.objects.all() if x.cook.name == row.kid]
@@ -159,29 +162,56 @@ def brewing_the_kochliste(request):
             
     sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 
-    df1 = pd.DataFrame(sorted_scoreboard[0][1][2], index=['Kids (variant 1)']).transpose()
-    
-    df1.index = pd.to_datetime(df1.index)
-    if Setup.optimise:
-        df1 = optimise(df1)
-    df1.fillna('', inplace=True)
-    #df1 = ({df1.index: 32, df1.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[0][1][1].items()])})
-    df2 = pd.DataFrame(sorted_scoreboard[1][1][2], index=['Kids (variant 2)']).transpose()
-    df2.index = pd.to_datetime(df2.index)
-    if Setup.optimise:
-        df2 = optimise(df2)
-    df2.fillna('', inplace=True)
-    #df2 = df2.append({df2.index: 32, df2.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[1][1][1].items()])})
-    df3 = pd.DataFrame(sorted_scoreboard[2][1][2], index=['Kids (variant 3)']).transpose()
-    df3.index = pd.to_datetime(df3.index)
-    if Setup.optimise:
-        df3 = optimise(df3)
-    df3.fillna('', inplace=True)
-    #df3 = df3.append({df3.index: 32, df3.keys()[0]: str([str(a[0])+ ' ' + str(a[1]) for a in sorted_scoreboard[2][1][1].items()])})
+    def get_rid_of_american_index(df):
+        new_index = []
+        for date_str in df.index:
+            # Split the date string
+            month, day, year = date_str.split('/')
+            # Rearrange to dd/mm/yyyy format
+            new_date_str = f"{day}/{month}/{year}"
+            new_index.append(new_date_str)
+        return new_index
+
+    # Function to process a single dataframe
+    def process_df(scoreboard_data, variant_name):
+        # Create initial dataframe
+        df = pd.DataFrame(scoreboard_data[1][2], index=[f'Kids (variant {variant_name})']).transpose()
+
+        if Setup.optimise:
+            df = optimise(df)
+        df.fillna('', inplace=True)
+
+        df.index = get_rid_of_american_index(df)
+        # Add SubBench entries based on the dictionary values
+        lucky_kids_dict = scoreboard_data[1][1]
+        bench_counter = 1
+        for kid_name, count in lucky_kids_dict.items():
+            # Add the kid to SubBench rows as many times as the count indicates
+            for i in range(count):
+                bench_key = f'SubBench{bench_counter}'
+                df.loc[bench_key] = [kid_name]
+                bench_counter += 1
+
+        return df
+
+    # Process each dataframe
+    df1 = process_df(sorted_scoreboard[0], '1')
+    df2 = process_df(sorted_scoreboard[1], '2')
+    df3 = process_df(sorted_scoreboard[2], '3')
+
+    # Print lucky kids
     print(f'Lucky kids: \n {sorted_scoreboard[0][1][1]} \n {sorted_scoreboard[1][1][1]} \n {sorted_scoreboard[2][1][1]}')
+
+    # Store dataframes in Setup
     Setup.df1 = df1
     Setup.df2 = df2
     Setup.df3 = df3
 
+    # Create form and render template
     form = DataframeChoice()
-    return render(request, 'result_form.html', {'resulttable1': df1.to_html(classes="dataframe dfirst"), 'resulttable2': df2.to_html(classes="dataframe dsecond"), 'resulttable3': df3.to_html(classes="dataframe dthird"), 'form': form})
+    return render(request, 'result_form.html', {
+        'resulttable1': df1.to_html(classes="dataframe dfirst"),
+        'resulttable2': df2.to_html(classes="dataframe dsecond"),
+        'resulttable3': df3.to_html(classes="dataframe dthird"),
+        'form': form
+    })

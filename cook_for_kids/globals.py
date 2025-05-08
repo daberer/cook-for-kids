@@ -6,3 +6,4 @@ class Setup:
     df3 = None
     optimise = True
     trial_number = 1000
+    tuesday_excursion_day = True

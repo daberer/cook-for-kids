@@ -21,9 +21,8 @@ from django.views.generic.base import TemplateView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
-    #path('', views.home, name='home'),
+    path('', views.home, name='home'),
     path('start/', views.brewing_the_kochliste, name='brewing'),
-    path('base/', views.base, name='base'),
     path('addholidays/', views.add_holidays, name='add holidays'),
     path('setup-month/', views.setup_month, name='setup month'),
     path('check-results/', views.check_results, name='check results'),

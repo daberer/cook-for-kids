@@ -33,18 +33,46 @@
     {% block content %}
     {% endblock %}
   </main>
-  <div class="container my-5">
+  
+<div class="container my-5">
     <div class="row">
         <div class="col-12 text-center">
             <h1 class="mb-4">Cook-for-kids navigate</h1>
             <div class="button-container d-grid gap-3">
-                <a href="admin/" class="btn btn-primary">Admin Page</a>
-                <a href="start/" class="btn btn-danger">Start</a>
-                <a href="addholidays/" class="btn btn-success">Add Holidays</a>
-                <a href="setup-month/" class="btn btn-warning">Setup Month</a>
+                <a href="admin/" class="btn btn-primary btn-lg shadow-sm">
+                    <i class="fas fa-user-shield me-2"></i>Admin Page
+                </a>
+
+                {% if cooking_data.kochdienste < cooking_data.kochtage %}
+                    <button class="btn btn-danger btn-lg position-relative disabled" 
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Please add more cooking duties in the setup">
+                        <i class="fas fa-utensils me-2"></i>Start
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                    </button>
+                    <div class="alert alert-warning mt-2 animate__animated animate__pulse animate__infinite">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Not enough cooking duties!</strong> Please add more in the setup.
+                    </div>
+                {% else %}
+                    <a href="start/" class="btn btn-danger btn-lg shadow-sm">
+                        <i class="fas fa-utensils me-2"></i>Start
+                    </a>
+                {% endif %}
+
+                <a href="addholidays/" class="btn btn-success btn-lg shadow-sm">
+                    <i class="fas fa-calendar-plus me-2"></i>Add Holidays
+                </a>
+                <a href="setup-month/" class="btn btn-warning btn-lg shadow-sm">
+                    <i class="fas fa-cog me-2"></i>Setup Month
+                </a>
             </div>
         </div>
     </div>
+</div>
     <div class="image-container">
       <img src="{% static 'images/pot.png' %}" alt="Pot Image">
     </div>
