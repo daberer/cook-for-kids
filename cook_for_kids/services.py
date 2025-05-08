@@ -157,7 +157,8 @@ def calculate_month(it=1, test=False):
     kochtage = cooking_data['kochtage']
     block_dict = cooking_data['block_dict']
     all_days = cooking_data['all_days']
-    
+    result_dict = cooking_data['result_dict']
+    kids_dict = cooking_data['kids_dict']
 
     
     if  kochdienste < kochtage :

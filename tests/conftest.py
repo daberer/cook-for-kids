@@ -32,13 +32,10 @@ def dishes(kids):
 def holidays():
     """Create some test holidays"""
     holidays_data = []
-    today = date.today()
-    for i in range(3):
-        holiday = Holiday.objects.create(
-            date=today + timedelta(days=i*7),
-            text=f"Holiday {i+1}"
-        )
-        holidays_data.append(holiday)
+    holiday1 = Holiday.objects.create(date=date(2025, 5, 1), text="Labour Day")
+    holiday2 = Holiday.objects.create(date=date(2025, 5, 29), text="Ascension Day")
+    holidays_data.append(holiday1)
+    holidays_data.append(holiday2)
     return holidays_data
 
 @pytest.fixture
