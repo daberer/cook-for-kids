@@ -123,7 +123,7 @@ def brewing_the_kochliste(request):
 
         # Filter out rows where the index starts with "SubBench"
         df = df[~df.index.astype(str).str.startswith('SubBench')]
-        df.index = pd.to_datetime(df.index, format='%d/%m/%Y')
+        df.index = pd.to_datetime(df.index, format='%Y-%m-%d')
         for i, row in df.iterrows():
             if row.kid != '':
                 if row.name.day_of_week == 1 and Setup.tuesday_excursion_day:
@@ -162,26 +162,17 @@ def brewing_the_kochliste(request):
             
     sorted_scoreboard = sorted(scoreboard.items(), key=lambda x: x[0])
 
-    def get_rid_of_american_index(df):
-        new_index = []
-        for date_str in df.index:
-            # Split the date string
-            month, day, year = date_str.split('/')
-            # Rearrange to dd/mm/yyyy format
-            new_date_str = f"{day}/{month}/{year}"
-            new_index.append(new_date_str)
-        return new_index
 
     # Function to process a single dataframe
     def process_df(scoreboard_data, variant_name):
         # Create initial dataframe
         df = pd.DataFrame(scoreboard_data[1][2], index=[f'Kids (variant {variant_name})']).transpose()
-
+        df.index = pd.to_datetime(df.index) #the optimisation requires datetime format
         if Setup.optimise:
             df = optimise(df)
         df.fillna('', inplace=True)
 
-        df.index = get_rid_of_american_index(df)
+        df.index = df.index.astype(str)
         # Add SubBench entries based on the dictionary values
         lucky_kids_dict = scoreboard_data[1][1]
         bench_counter = 1

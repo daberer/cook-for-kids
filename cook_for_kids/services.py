@@ -198,7 +198,7 @@ def calculate_month(it=1, test=False):
                     return True
 
     if not go_cooking():
-        print(f'try {it} - No solution possible')
+        print(f'try {it}: No solution found')
         return
     else:
         max_luck = 0
@@ -211,7 +211,7 @@ def calculate_month(it=1, test=False):
                 lucky.append(f'kid:{kid}, luck:{luck}')
                 lucky_kids.append(kid)
                 
-        print(f'success, luckies: {lucky}')
+        print(f'try {it}: Success! luckies: {lucky}')
         
         # fill up month
         for day in all_days:
