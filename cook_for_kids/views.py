@@ -149,7 +149,7 @@ def brewing_the_kochliste(request):
         df.index = pd.to_datetime(df.index, format='%Y-%m-%d')
         for i, row in df.iterrows():
             if row.kid != '':
-                if row.name.day_of_week == 1 and Setup.tuesday_excursion_day:
+                if row.name.day_of_week == Setup.excursion_day[1] and Setup.excursion_day[0]:
                     df.at[i, 'dish'] = 'Essen to go (Ausflugsessen)'
                 else:
                     res = [

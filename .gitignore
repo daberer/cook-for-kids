@@ -1,6 +1,9 @@
 .vscode/**
 db.sqlite3
 
+/static/
+!/cook_for_kids/static/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

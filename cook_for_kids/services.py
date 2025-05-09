@@ -6,8 +6,8 @@ from cook_for_kids.globals import Setup
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import os
 import textwrap
+from PIL import Image
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
@@ -585,6 +585,8 @@ def create_styled_pdf(df):
     ax.axis('off')
     ax.axis('tight')
 
+
+
     # Convert datetime column to date format for display
     display_df = df.copy()
     if 'date' in df.columns:
@@ -683,15 +685,64 @@ def create_styled_pdf(df):
             for j in range(3):
                 table[(row_idx, j)].set_height(table[(row_idx, j)].get_height() * height_factor)
 
-    # Scale table to fit the figure but maintain landscape orientation
-    table.scale(1, 1.5)
+    # Scale table to fit the figure
+    if row_count > 25:
+        table.scale(1, 1.5)
+    elif row_count > 15:
+        table.scale(1, 1.4)
+    else:
+        table.scale(1, 1.3)
+    
 
     # Move table down to make room for title, but not too far down
     table.set_transform(ax.transAxes)
-    table._cells[(0, 0)].set_y(0.90)  # Moved up from 0.85 to 0.90
 
-    # Add title above the table with German month name
-    plt.suptitle(f"Kochliste {month_name} {Setup.year}", fontsize=16, y=0.98)
+
+
+
+    parot_dict = {
+        'purple': '#691367',
+        'light_blue': '#40B3C2', 
+        'orange': '#FFB203',
+        'neon-red': '#EA0A5D'
+    }
+
+
+    # First create the logo axes with a higher z-order
+    organisation_label = "./static/images/kindergruppe_butterbrot.png"
+    try:
+        org_img = plt.imread(organisation_label)
+        # Create a new axes for the logo in the top left with a higher z-order
+        org_ax = fig.add_axes([0.49, 0.905, 0.45, 0.10], zorder=2)  
+        org_ax.imshow(org_img)
+        org_ax.axis('off')  # Hide the axes of the logo
+    except Exception as e:
+        print(f"Could not load organisation label: {e}")
+
+    # First create the logo axes with a higher z-order
+    parrot_path = "./static/images/parrot.png"
+    try:
+        par_img = plt.imread(parrot_path)
+        # Create a new axes for the logo in the top left with a higher z-order
+        par_ax = fig.add_axes([-0.005, 0.91, 0.2, 0.10], zorder=2)  
+        par_ax.imshow(par_img)
+        par_ax.axis('off')  # Hide the axes of the logo
+    except Exception as e:
+        print(f"Could not load parrot image: {e}")
+
+    # Then add the suptitle with a lower z-order
+    plt.suptitle(f"             Kochliste {month_name} {Setup.year}                                                     ", 
+            fontsize=23,
+            fontweight='bold',
+            y=0.98,
+            x=0.5,
+            color='white',
+            zorder=1,  # Lower z-order so it appears behind the logo
+            bbox=dict(boxstyle='round,pad=0.5', 
+                    facecolor='#681469',
+                    edgecolor=parot_dict['neon-red'],
+                    alpha=0.9,
+                    linewidth=5))
 
     # Save as PDF with landscape orientation explicitly set
     with PdfPages(pdf_path) as pdf:
