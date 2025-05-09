@@ -1,10 +1,13 @@
-
 import calendar
 import datetime
 from .models import Kid, Holiday, Waiverday, Dish
-import random
+import random, os
 from cook_for_kids.globals import Setup
 import itertools
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import os
+import textwrap
 
 def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
     score = 0
@@ -522,7 +525,189 @@ def format_date_ranges(days):
 
     return ", ".join(ranges)
 
-if __name__ == '__main__':
-    calculate_month()
+def create_styled_pdf(df):
+    import pandas as pd
+
+    # Dictionary to convert month number to German month name
+    month_dict = {
+        1: 'Jänner', 
+        2: 'Februar', 
+        3: 'März', 
+        4: 'April', 
+        5: 'Mai', 
+        6: 'Juni', 
+        7: 'Juli', 
+        8: 'August', 
+        9: 'September', 
+        10: 'Oktober', 
+        11: 'November', 
+        12: 'Dezember'
+    }
+
+    # Get German month name
+    month_name = month_dict.get(Setup.month, str(Setup.month))
+
+    # Ensure directory exists
+    pdf_path = f"/home/daberer/Documents/Kochliste/{Setup.year}_{Setup.month}_kochliste.pdf"
+    os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+
+    # Remove initial empty kid rows and also from reverse
+    cleaned_df = df.copy()
+
+    # Clean from the front (beginning of dataframe)
+    for i in range(len(cleaned_df)):
+        if cleaned_df.iloc[i]['kid'] == '':
+            continue
+        else:
+            # Found first non-empty kid, keep from here
+            cleaned_df = cleaned_df.iloc[i:]
+            break
+
+    # Clean from the back (end of dataframe)
+    for i in range(len(cleaned_df)-1, -1, -1):
+        if cleaned_df.iloc[i]['kid'] == '':
+            continue
+        else:
+            # Found last non-empty kid, keep up to here
+            cleaned_df = cleaned_df.iloc[:i+1]
+            break
+
+    # Reset index after removing rows
+    cleaned_df = cleaned_df.reset_index(drop=True)
+
+    # Use the cleaned dataframe for the rest of the function
+    df = cleaned_df
+
+    # Create figure with the right aspect ratio for A4 landscape
+    fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 landscape in inches
+
+    # Hide axes
+    ax.axis('off')
+    ax.axis('tight')
+
+    # Convert datetime column to date format for display
+    display_df = df.copy()
+    if 'date' in df.columns:
+        display_df['date'] = pd.to_datetime(df['date']).dt.strftime('%d.%m.%Y')
+
+    # ===== ADJUST WRAPPING HERE =====
+    # Increase these values to delay wrapping and use more horizontal space
+    row_count = len(df)
+    if row_count > 25:
+        font_size = 8
+        max_width = 147  # INCREASE THIS VALUE to delay wrapping (was 60)
+    elif row_count > 15:
+        font_size = 9
+        max_width = 110   # INCREASE THIS VALUE to delay wrapping (was 70)
+    else:
+        font_size = 10
+        max_width = 100   # INCREASE THIS VALUE to delay wrapping (was 80)
+    # ================================
+
+    # Apply text wrapping to dish column
+    dish_col_index = 2  # Third column (0-indexed)
+    for i in range(len(display_df)):
+        dish_text = str(display_df.iloc[i, dish_col_index])
+        # Only wrap if text is longer than max_width
+        if len(dish_text) > max_width:
+            display_df.iloc[i, dish_col_index] = '\n'.join(textwrap.wrap(dish_text, width=max_width))
+
+    # Create table data
+    table_data = display_df.values
+
+    # Create table with renamed columns
+    # Create a list of renamed column labels
+    renamed_columns = ['Datum', 'Kochkind', 'Gericht']
+
+    table = ax.table(
+        cellText=table_data,
+        colLabels=renamed_columns,  # Use the renamed columns here
+        loc='center',
+        cellLoc='center',
+    )
+
+    # Style the table
+    table.auto_set_font_size(False)
+    table.set_fontsize(font_size)
+
+    # Set column widths - give even more space to the dish column
+    col_widths = [0.09, 0.15, 0.76]  # Adjusted to give more space to dish column
+    for i, width in enumerate(col_widths):
+        if i < 3:  # Always 3 columns
+            for row in range(len(df) + 1):  # +1 for header
+                table[(row, i)].set_width(width)
+
+    # Style header - make it twice as high and use the requested color
+    header_color = '#4372c9'  # Changed to requested color
+    for i, key in enumerate(renamed_columns):  # Use renamed_columns here
+        cell = table[(0, i)]
+        cell.set_facecolor(header_color)
+        cell.set_text_props(color='white', fontweight='bold')
+        # Make header row twice as high
+        cell.set_height(cell.get_height() * 1.5)
+
+    # Style rows with the new color scheme
+    for i in range(len(df)):
+        row_idx = i + 1  # +1 because header is row 0
+
+        # Check for empty kid field - override with dark gray
+        if df.iloc[i]['kid'] == '':
+            row_color = '#676767'
+            # Apply row color to all columns
+            for j in range(3):
+                cell = table[(row_idx, j)]
+                cell.set_facecolor(row_color)
+        else:
+            # Apply specific colors to each column
+            # First column (date) - white
+            table[(row_idx, 0)].set_facecolor('#FFFFFF')
+
+            # Second column (kid) and third column (dish) - light gray
+            table[(row_idx, 1)].set_facecolor('#ECECEC')
+            table[(row_idx, 2)].set_facecolor('#ECECEC')
+
+    # Apply uniform row heights to maintain alignment
+    # First, find rows that need extra height due to wrapping
+    row_heights = {}
+    for i in range(len(df)):
+        row_idx = i + 1
+        text = display_df.iloc[i, dish_col_index]
+        num_lines = text.count('\n') + 1
+        row_heights[row_idx] = num_lines
+
+    # Apply height adjustments uniformly
+    max_lines = max(row_heights.values())
+    if max_lines > 1:
+        for row_idx, lines in row_heights.items():
+            height_factor = 1 + (lines - 1) * 0.5
+            for j in range(3):
+                table[(row_idx, j)].set_height(table[(row_idx, j)].get_height() * height_factor)
+
+    # Scale table to fit the figure but maintain landscape orientation
+    table.scale(1, 1.5)
+
+    # Move table down to make room for title, but not too far down
+    table.set_transform(ax.transAxes)
+    table._cells[(0, 0)].set_y(0.90)  # Moved up from 0.85 to 0.90
+
+    # Add title above the table with German month name
+    plt.suptitle(f"Kochliste {month_name} {Setup.year}", fontsize=16, y=0.98)
+
+    # Save as PDF with landscape orientation explicitly set
+    with PdfPages(pdf_path) as pdf:
+        plt.tight_layout(pad=1.2)
+        pdf.savefig(fig, orientation='landscape', bbox_inches='tight', pad_inches=0.4)
+
+    plt.close(fig)
+
+    return pdf_path
+
+
+
+
+
+
+
+
     
     

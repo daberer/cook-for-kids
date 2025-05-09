@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased Changes
+- Prettify result view
+- Output direct to pdf
+
 ## v1.1
 - Month setup more informative and improved UI
 - Added SubBench feature for kids that were not selected for all their monthly duties

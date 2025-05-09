@@ -1,66 +1,497 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Table Swapper</title>
+  <!-- Modern Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom stylesheet -->
   <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
   <style>
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2ecc71;
+      --accent-color: #f39c12;
+      --dark-color: #2c3e50;
+      --light-color: #ecf0f1;
+      --error-color: #e74c3c;
+      --success-bg-color: rgba(46, 204, 113, 0.2);
+      --success-color: #27ae60;
+      --neutral-bg-color: rgba(236, 240, 241, 0.5);
+      --neutral-color: #7f8c8d;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f7fa;
+      color: var(--dark-color);
+      padding: 20px;
+      font-size: 0.9rem;
+      /* Smaller base font size */
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 0px;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+    }
+
+    .header p.lead {
+      font-size: 1rem;
+      margin-bottom: 0;
+    }
+
+    .data-table-container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      margin-bottom: 20px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border-top: 3px solid;
+    }
+
+    /* Table specific styling */
+    .table1-wrapper {
+      border-color: var(--table1-color);
+      box-shadow: 0 2px 8px rgba(52, 152, 219, 0.15);
+    }
+
+    .table2-wrapper {
+      border-color: var(--table2-color);
+      box-shadow: 0 2px 8px rgba(155, 89, 182, 0.15);
+    }
+
+    .table3-wrapper {
+      border-color: var(--table3-color);
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.15);
+    }
+
+    table.dataframe {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.85rem;
+      /* Smaller table font */
+    }
+
+    /* Table theme colors */
+    :root {
+      --table1-color: #3498db;
+      /* Blue */
+      --table2-color: #9b59b6;
+      /* Purple */
+      --table3-color: #e74c3c;
+      /* Red */
+    }
+
+    /* Table header styling for each table */
+    .table1-wrapper table.dataframe th {
+      background-color: var(--table1-color);
+    }
+
+    .table2-wrapper table.dataframe th {
+      background-color: var(--table2-color);
+    }
+
+    .table3-wrapper table.dataframe th {
+      background-color: var(--table3-color);
+    }
+
+    table.dataframe th {
+      color: white;
+      font-weight: 500;
+      text-align: left;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+
+    }
+
+    table.dataframe td {
+      padding: 7px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      transition: all 0.2s ease;
+      width: 74%;
+    }
+
+    table.dataframe tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Hover effects for each table */
+    .table1-wrapper table.dataframe tr:hover td {
+      background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    .table2-wrapper table.dataframe tr:hover td {
+      background-color: rgba(155, 89, 182, 0.05);
+    }
+
+    .table3-wrapper table.dataframe tr:hover td {
+      background-color: rgba(231, 76, 60, 0.05);
+    }
+
     .selected {
-      background-color: yellow;
+      background-color: rgba(243, 156, 18, 0.2) !important;
+      box-shadow: inset 0 0 0 2px var(--accent-color);
+      position: relative;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: inset 0 0 0 2px var(--accent-color);
+      }
+
+      50% {
+        box-shadow: inset 0 0 0 3px var(--accent-color);
+      }
+
+      100% {
+        box-shadow: inset 0 0 0 2px var(--accent-color);
+      }
+    }
+
+    .controls-container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      font-size: 0.85rem;
+    }
+
+    .btn-custom-primary {
+      background-color: var(--primary-color);
+      border: none;
+      padding: 8px 20px;
+      border-radius: 50px;
+      color: white;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+      font-size: 0.85rem;
+    }
+
+    .btn-custom-primary:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+    }
+
+    .btn-custom-success {
+      background-color: var(--secondary-color);
+      border: none;
+      padding: 8px 20px;
+      border-radius: 50px;
+      color: white;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+      font-size: 0.85rem;
+    }
+
+    .btn-custom-success:hover {
+      background-color: #27ae60;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(46, 204, 113, 0.4);
+    }
+
+    #responseMessage {
+      padding: 12px;
+      margin-bottom: 0px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.85rem;
+      transition: all 0.5s ease;
+    }
+
+    .response-success {
+      background-color: var(--success-bg-color);
+      color: var(--success-color);
+      border-left: 4px solid var(--success-color);
+    }
+
+    .response-error {
+      background-color: rgba(231, 76, 60, 0.2);
+      color: #e74c3c;
+      border-left: 4px solid #e74c3c;
+    }
+
+    .response-warning {
+      background-color: rgba(243, 156, 18, 0.2);
+      color: #f39c12;
+      border-left: 4px solid #f39c12;
+    }
+
+    .response-neutral {
+      background-color: var(--neutral-bg-color);
+      color: var(--neutral-color);
+      border-left: 4px solid var(--neutral-color);
+    }
+
+    /* Animation for response message */
+    @keyframes highlightSuccess {
+      0% {
+        background-color: var(--success-bg-color);
+        color: var(--success-color);
+        border-left-color: var(--success-color);
+      }
+
+      100% {
+        background-color: var(--neutral-bg-color);
+        color: var(--neutral-color);
+        border-left-color: var(--neutral-color);
+      }
+    }
+
+    .highlight-check {
+      animation: highlightSuccess 2s forwards;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+      font-size: 0.85rem;
+    }
+
+    .instructions {
+      background-color: rgba(52, 152, 219, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--primary-color);
+      font-size: 0.85rem;
+      position: relative;
+    }
+
+    .instructions h5 {
+      font-size: 0.95rem;
+      margin-bottom: 5px;
+    }
+
+    .instructions p {
+      margin-bottom: 5px;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--primary-color);
+      font-size: 1rem;
+    }
+
+    .close-btn:hover {
+      color: #2980b9;
+    }
+
+    .status-indicator {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .status-indicator i {
+      margin-right: 5px;
+    }
+
+    /* Table title styling */
+    .table-title {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      color: white;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .table1-title {
+      background-color: var(--table1-color);
+    }
+
+    .table2-title {
+      background-color: var(--table2-color);
+    }
+
+    .table3-title {
+      background-color: var(--table3-color);
+    }
+
+    /* Background flash for table checks */
+    @keyframes tableFlash {
+      0% {
+        background-color: rgba(46, 204, 113, 0);
+      }
+
+      50% {
+        background-color: rgba(46, 204, 113, 0.15);
+      }
+
+      100% {
+        background-color: rgba(46, 204, 113, 0);
+      }
+    }
+
+    .table-check-flash {
+      animation: tableFlash 2s forwards;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <div class="row">
-      <div class="col-6 col-md-4">
-        {{ resulttable1|safe }}
+    <!-- Header -->
+    <div class="header">
+      <h1><i class="fas fa-table"></i> Assign Meal Rotations</h1>
+      <p class="lead">Click cells to swap kids between different days</p>
+    </div>
+
+    <!-- Response Message (moved to top) -->
+    <div id="responseMessage"></div>
+
+
+
+    <!-- Data Tables -->
+    <div class="data-table-container">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="table-title table1-title">Table 1</div>
+          <div class="table-wrapper table1-wrapper">
+            {{ resulttable1|safe }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="table-title table2-title">Table 2</div>
+          <div class="table-wrapper table2-wrapper">
+            {{ resulttable2|safe }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="table-title table3-title">Table 3</div>
+          <div class="table-wrapper table3-wrapper">
+            {{ resulttable3|safe }}
+          </div>
+        </div>
       </div>
-      <div class="col-6 col-md-4">
-        {{ resulttable2|safe }}
-      </div>
-      <div class="col-6 col-md-4">
-        {{ resulttable3|safe }}
+    </div>
+
+    <!-- Controls Section (removed check button) -->
+    <div class="controls-container">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+
+
+          <form id="swapForm" action="" method="post">
+            {% csrf_token %}
+            <div class="d-flex align-items-center">
+              <div class="form-group me-3">
+                <button type="submit" class="btn-custom-primary">
+                  <i class="fas fa-paper-plane"></i> Submit
+                </button>
+                <input type="hidden" id="swapData" name="swapData" value="">
+              </div>
+              <div class="form-group">
+                {{ form.df_number }}
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+          <div class="status-indicator">
+            <i class="fas fa-circle" id="statusIcon"></i>
+            <span>Status: Ready to check</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="buttonHolder">
-    <form id="swapForm" action="" method="post">
-      {% csrf_token %}
-      <div class="form-group">
-        {{ form.df_number }}
-      </div>
 
-      <div class="form-group">
-        <input class="btn btn-primary" type="submit" value="Submit">
-      </div>
-      <input type="hidden" id="swapData" name="swapData" value="">
-    </form>
-    <button id="asyncButton" class="btn btn-success">check</button>
-    <span id="responseMessage"></span>
-  </div>
-
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let selectedCell = null;
+    let selectedTableIndex = null;
+    let checkCount = 0;
 
-    $(document).ready(function() {
-      $('td').on('click', function() {
+    $(document).ready(function () {
+      // Add instruction close button functionality
+      $('#closeInstructions').on('click', function () {
+        $('#instructionsContainer').slideUp();
+      });
+
+      $('td').on('click', function () {
+        // Find which table the cell belongs to
+        const currentTable = $(this).closest('.table-wrapper');
+        const currentTableIndex = $('.table-wrapper').index(currentTable);
+
         if (selectedCell) {
-          const selectedCellContent = selectedCell.html();
-          const currentCellContent = $(this).html();
+          // Check if the current cell is from the same table as the selected cell
+          if (currentTableIndex === selectedTableIndex) {
+            const selectedCellContent = selectedCell.html();
+            const currentCellContent = $(this).html();
 
-          selectedCell.html(currentCellContent);
-          $(this).html(selectedCellContent);
+            selectedCell.html(currentCellContent);
+            $(this).html(selectedCellContent);
 
-          selectedCell.removeClass('selected');
-          selectedCell = null;
+            selectedCell.removeClass('selected');
+            selectedCell = null;
+            selectedTableIndex = null;
 
-          saveSwapData();
+            saveSwapData();
+            // Automatically check results after each swap
+            checkResults();
+
+            // Visual feedback that swap happened
+            currentTable.addClass('table-check-flash');
+            setTimeout(function () {
+              currentTable.removeClass('table-check-flash');
+            }, 2000);
+          } else {
+            // Show warning that cells must be in the same table
+            const responseMsg = $('#responseMessage');
+            responseMsg.text('Cells must be in the same table to swap!')
+              .removeClass('response-success response-error response-neutral highlight-check')
+              .addClass('response-warning')
+              .slideDown();
+
+            // Deselect the current selection
+            selectedCell.removeClass('selected');
+            selectedCell = null;
+            selectedTableIndex = null;
+          }
         } else {
           selectedCell = $(this);
+          selectedTableIndex = currentTableIndex;
           selectedCell.addClass('selected');
         }
       });
@@ -73,9 +504,9 @@
           df3: []
         };
 
-        tables.each(function(index) {
+        tables.each(function (index) {
           const rows = $(this).find('tr');
-          rows.each(function() {
+          rows.each(function () {
             const cell = $(this).find('td:first'); // Only get the first column
             if (cell.length > 0) {
               if (index === 0) data.df1.push(cell.html());
@@ -88,23 +519,76 @@
         $('#swapData').val(JSON.stringify(data));
       }
 
-      $('#asyncButton').on('click', function() {
+      function updateStatus(status) {
+        const statusIcon = $('#statusIcon');
+        const statusText = statusIcon.next();
+
+        if (status === 'modified') {
+          statusIcon.css('color', '#f39c12').removeClass().addClass('fas fa-exclamation-circle');
+          statusText.text('Status: Changes made, ready to check');
+        } else if (status === 'checking') {
+          statusIcon.css('color', '#3498db').removeClass().addClass('fas fa-spinner fa-spin');
+          statusText.text('Status: Checking...');
+        } else if (status === 'success') {
+          statusIcon.css('color', '#2ecc71').removeClass().addClass('fas fa-check-circle');
+          statusText.text('Status: Success!');
+        } else if (status === 'error') {
+          statusIcon.css('color', '#e74c3c').removeClass().addClass('fas fa-times-circle');
+          statusText.text('Status: Error occurred');
+        }
+      }
+
+      // Function to check results automatically
+      function checkResults() {
+        const responseMsg = $('#responseMessage');
+        updateStatus('checking');
+
+        // Increment check counter for unique effect handling
+        checkCount++;
+        const currentCheckCount = checkCount;
+
         const data = $('#swapData').val();
         $.ajax({
           type: 'POST',
-          url: '/check-results/', // Update with your backend URL
+          url: '/check-results/',
           data: {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             swapData: data
           },
-          success: function(response) {
-            $('#responseMessage').text(response.message);
+          success: function (response) {
+            // Only process if this is still the most recent check
+            if (currentCheckCount === checkCount) {
+              // Reset any existing classes and animations
+              responseMsg.removeClass('response-warning response-error response-neutral highlight-check');
+
+              // Show the message with success styling
+              responseMsg.text(response.message)
+                .addClass('response-success')
+                .fadeIn(300);
+
+              // After a delay, add the highlight-check class to trigger the animation
+              setTimeout(function () {
+                if (currentCheckCount === checkCount) { // Check again if this is still the current response
+                  responseMsg.addClass('highlight-check');
+                }
+              }, 300);
+
+              updateStatus('success');
+            }
           },
-          error: function(xhr, status, error) {
-            $('#responseMessage').text('An error occurred: ' + error);
+          error: function (xhr, status, error) {
+            // Only process if this is still the most recent check
+            if (currentCheckCount === checkCount) {
+              responseMsg.text('An error occurred: ' + error)
+                .removeClass('response-warning response-success response-neutral highlight-check')
+                .addClass('response-error')
+                .fadeIn(300);
+
+              updateStatus('error');
+            }
           }
         });
-      });
+      }
     });
   </script>
 </body>
