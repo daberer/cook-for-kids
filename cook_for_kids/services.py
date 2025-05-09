@@ -7,9 +7,13 @@ import itertools
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import textwrap
-from PIL import Image
+from django.db.models import Q
+from functools import reduce
+import operator
 
-def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
+
+def evaluate_result(result: dict, all_days: dict,
+                    leftover_dishes: list) -> int:
     score = 0
 
     # leftovers
@@ -17,7 +21,6 @@ def evaluate_result(result: dict, all_days: dict, leftover_dishes: list) -> int:
         score += 10
 
     return score
-
     """ #check doubles per week
     week = []
     for day in result:
@@ -69,13 +72,15 @@ def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
     return c_dict
 
 
-def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: dict, first: str) -> list:
+def find_potential_cooks(day: datetime.date, current_block: dict,
+                         current_kids: dict, first: str) -> list:
     """
     Function to find potenial cooks for given day
     """
     # TODO: get rid of current block variable
     kids_with_dishes_left_to_cook = [
-        k for k, v in current_kids.items() if v > 0]
+        k for k, v in current_kids.items() if v > 0
+    ]
 
     # find kids with block today
 
@@ -86,8 +91,9 @@ def find_potential_cooks(day: datetime.date, current_block: dict, current_kids: 
         waiverday = None
         kids_with_block_on_this_day = []
 
-    potenial_cooks = list(set(kids_with_dishes_left_to_cook) -
-                          set(kids_with_block_on_this_day) - set([first]))
+    potenial_cooks = list(
+        set(kids_with_dishes_left_to_cook) - set(kids_with_block_on_this_day) -
+        set([first]))
     random.shuffle(potenial_cooks)
     return potenial_cooks
 
@@ -115,17 +121,27 @@ def get_cooking_schedule(year, month, num_days):
     """
 
     # Get all days in the month and filter out weekends (Saturday=5, Sunday=6)
-    all_days = [datetime.date(year, month, day) for day in range(1, num_days+1)]
+    all_days = [
+        datetime.date(year, month, day) for day in range(1, num_days + 1)
+    ]
     day_objects = [day for day in all_days if day.weekday() not in (5, 6)]
 
     # Filter out holidays
     holidays_all = list(Holiday.objects.all())
-    holidays_current = [ho.date for ho in holidays_all if (
-        ho.date.year == year and ho.date.month == month)]
+    holidays_current = [
+        ho.date for ho in holidays_all
+        if (ho.date.year == year and ho.date.month == month)
+    ]
 
     # Create dictionaries for available cooking days
-    result_dict = {day: '' for day in day_objects if day not in holidays_current}
-    block_dict = {day: [] for day in day_objects if day not in holidays_current}
+    result_dict = {
+        day: ''
+        for day in day_objects if day not in holidays_current
+    }
+    block_dict = {
+        day: []
+        for day in day_objects if day not in holidays_current
+    }
 
     # Get kids and their monthly cooking duties
     kids = Kid.objects.all()
@@ -152,8 +168,8 @@ def calculate_month(it=1, test=False):
     if test:
         year, month = 2025, 5
 
-    num_days = num_days_in_month(year, month) 
-        
+    num_days = num_days_in_month(year, month)
+
     cooking_data = get_cooking_schedule(year, month, num_days)
 
     kochdienste = cooking_data['kochdienste']
@@ -163,16 +179,17 @@ def calculate_month(it=1, test=False):
     result_dict = cooking_data['result_dict']
     kids_dict = cooking_data['kids_dict']
 
-    
-    if  kochdienste < kochtage :
-        print(f'Not enough Kochdienste ({kochdienste}), for {kochtage} Kochtage this month.')
+    if kochdienste < kochtage:
+        print(
+            f'Not enough Kochdienste ({kochdienste}), for {kochtage} Kochtage this month.'
+        )
         return
 
     def go_cooking(first=None, second=None):
         for key in result_dict:
             if result_dict[key] == '':
-                potenial_cooks = find_potential_cooks(
-                    key, block_dict, kids_dict, first)
+                potenial_cooks = find_potential_cooks(key, block_dict,
+                                                      kids_dict, first)
                 found = 0
 
                 for cook in potenial_cooks:
@@ -213,22 +230,26 @@ def calculate_month(it=1, test=False):
                     max_luck = luck
                 lucky.append(f'kid:{kid}, luck:{luck}')
                 lucky_kids.append(kid)
-                
+
         print(f'try {it}: Success! luckies: {lucky}')
-        
+
         # fill up month
         for day in all_days:
             if day not in result_dict.keys():
                 result_dict[day] = None
-        
+
         result_dict = dict(sorted(result_dict.items()))
-        score = evaluate_result(result_dict, all_days, list(kids_dict.values()))
+        score = evaluate_result(result_dict, all_days,
+                                list(kids_dict.values()))
 
-        kids_dict = {k: v for k,v in kids_dict.items() if v != 0}
-        return score, kids_dict, {key.strftime("%m/%d/%Y"): value for key, value in result_dict.items()}
-
+        kids_dict = {k: v for k, v in kids_dict.items() if v != 0}
+        return score, kids_dict, {
+            key.strftime("%m/%d/%Y"): value
+            for key, value in result_dict.items()
+        }
 
     #TODO: take into account block days, choose lucky parents first and reduce their contingent before running the function (will lead to less results)
+
 
 def check_correctness(df):
     """
@@ -242,7 +263,8 @@ def check_correctness(df):
         try:
             if item[1] == None:
                 continue
-            a = Waiverday.objects.get(date=datetime.datetime.strptime(item[0], '%m/%d/%Y'))
+            a = Waiverday.objects.get(
+                date=datetime.datetime.strptime(item[0], '%m/%d/%Y'))
             kids = a.kid.all()
             k = Kid.objects.get(name=item[1])
             if k in kids:
@@ -250,6 +272,7 @@ def check_correctness(df):
         except Exception:
             pass
     return False
+
 
 def check_correctness_df(df):
     """
@@ -268,9 +291,10 @@ def check_correctness_df(df):
             return (f'{row[0]} has a waiverday on {i}!')
     return 'All good.'
 
+
 def optimise(dframe):
     print('optimising..')
-    
+
     def swap(df, date1, date2):
         swapkid = df.at[date1, df.columns[0]]
         df.at[date1, df.columns[0]] = df.at[date2, df.columns[0]]
@@ -282,21 +306,24 @@ def optimise(dframe):
         kid2_dates = d[d[d.columns[0]] == kid2].index
 
         if kid1_dates.empty or kid2_dates.empty:
-            return float('inf'), float('inf'), float('inf'), float('inf'), float('inf')
+            return float('inf'), float('inf'), float('inf'), float(
+                'inf'), float('inf')
 
         min_kid1 = kid1_dates[0].date()
         max_kid1 = kid1_dates[-1].date()
         min_kid2 = kid2_dates[0].date()
         max_kid2 = kid2_dates[-1].date()
 
-        max_days_kid1 = (max_kid1 - min_kid1).days if min_kid1 != max_kid1 else 0
-        max_days_kid2 = (max_kid2 - min_kid2).days if min_kid2 != max_kid2 else 0
+        max_days_kid1 = (max_kid1 -
+                         min_kid1).days if min_kid1 != max_kid1 else 0
+        max_days_kid2 = (max_kid2 -
+                         min_kid2).days if min_kid2 != max_kid2 else 0
         sum_max = max_days_kid1 + max_days_kid2
 
         kid1_diff = kid1_dates.to_series().diff().dt.days
         kid1_min_rest_days = kid1_diff.min()
         kid1_mean_rest_days = kid1_diff.mean()
-        
+
         kid2_diff = kid2_dates.to_series().diff().dt.days
         kid2_min_rest_days = kid2_diff.min()
         kid2_mean_rest_days = kid2_diff.mean()
@@ -323,8 +350,8 @@ def optimise(dframe):
                     except Waiverday.DoesNotExist:
                         waiverday2 = []
 
-                    if (Kid.objects.get(name=kid2) not in waiverday1 and
-                        Kid.objects.get(name=kid1) not in waiverday2):
+                    if (Kid.objects.get(name=kid2) not in waiverday1
+                            and Kid.objects.get(name=kid1) not in waiverday2):
                         break
             else:
                 continue
@@ -350,33 +377,30 @@ def additional_holidays(days):
     s_days_array = days.split(',')
     written_to_db = False
 
-
     def save_day(day_to_save):
         success = False
         holidays_all = list(Holiday.objects.all())
         holidays_datetimes = [days.date for days in holidays_all]
-        if day_to_save.weekday() not in (5,6) and day_to_save not in holidays_datetimes:         
+        if day_to_save.weekday() not in (
+                5, 6) and day_to_save not in holidays_datetimes:
             new_holiday = Holiday(date=day_to_save, text=str(day_to_save))
             new_holiday.save()
             success = True
         return success
 
-
     try:
-        for s_days in s_days_array:       
+        for s_days in s_days_array:
             if '-' in s_days:
                 s_days = s_days.split('-')
-                days_list = list(range(int(s_days[0]), int(s_days[1])+1))
+                days_list = list(range(int(s_days[0]), int(s_days[1]) + 1))
                 for day in days_list:
                     this_day = datetime.date(year, month, day)
                     written_to_db = save_day(this_day)
-                    
-                    
+
             else:
                 day = int(s_days)
-                this_day = datetime.date(year, month, day)       
-                written_to_db = save_day(this_day)    
-            
+                this_day = datetime.date(year, month, day)
+                written_to_db = save_day(this_day)
 
     except Exception as e:
         return (f'Failure because of {e}')
@@ -386,7 +410,13 @@ def additional_holidays(days):
     return 'Holiday(s) were already in database'
 
 
-def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None, month=None, year=None, dish=None):
+def additional_waiverdays(days,
+                          wishdays=False,
+                          kid=None,
+                          dishes_this_month=None,
+                          month=None,
+                          year=None,
+                          dish=None):
     """
     Function that adds new holidays single or in bulk
     """
@@ -394,46 +424,51 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
     if not kid:
         return 'No kid specified'
 
-    if dishes_this_month is not None:
-        current_kid = Kid.objects.filter(name=kid).first()
-        current_kid.monthly_dishes = dishes_this_month
-        current_kid.save()
-        res += 'kid updated, '
+    if dishes_this_month is None:
+        dishes_this_month = 0
+    current_kid = Kid.objects.filter(name=kid).first()
+    current_kid.monthly_dishes = dishes_this_month
+    current_kid.save()
+    res += 'kid updated, '
 
     dish_object = Dish.objects.filter(cook=kid).first()
     if dish_object:
         dish_object.dish_name = dish
         dish_object.save()
-    
-    else:
-        new_dish = Dish(dish_name=dish, cook=kid)            
-        new_dish.save()
-    res+='dish updated'
 
-    
+    else:
+        new_dish = Dish(dish_name=dish, cook=kid)
+        new_dish.save()
+    res += 'dish updated'
+
     month = int(month)
     year = int(year)
 
+    waiverdays_this_month = Waiverday.objects.filter(date__year=year,
+                                                     date__month=month,
+                                                     kid=kid)
     if days == '':
-        Waiverday.objects.filter(
-            date__year=year,
-            date__month=month,
-            kid=kid
-        ).delete()
+        for waiverday in waiverdays_this_month:
+            # Remove the specific kid
+            waiverday.kid.remove(kid)
+
+            # Check if any kids remain
+            if waiverday.kid.exists():
+                waiverday.save()
+            else:
+                waiverday.delete()
         return f'Waiverdays for {kid} deleted'
 
-
     num_days = calendar.monthrange(year, month)[1]
-    all_days = [day for day in range(1, num_days+1)]
+    all_days = [day for day in range(1, num_days + 1)]
 
     days = days.strip()
     s_days_array = days.split(',')
 
-    
     def entry_split(day):
         if '-' in day:
             sp = day.split('-')
-            return list(range(int(sp[0]), int(sp[1])+1))
+            return list(range(int(sp[0]), int(sp[1]) + 1))
         return [int(day)]
 
     mylists = [entry_split(x) for x in s_days_array]
@@ -441,14 +476,41 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
     if wishdays:
         flat_list = list(set(all_days) - set(flat_list))
 
-    written_to_db = False
+    flat_current_list = sorted([wai.date.day for wai in waiverdays_this_month])
 
+    # Create sorted list of integers in flat_current_list but not in flat_list
+    flat_delete_list = sorted(
+        [x for x in flat_current_list if x not in flat_list])
+
+    # Create sorted list of integers in flat_list but not in flat_current_list
+    flat_list = sorted([x for x in flat_list if x not in flat_current_list])
+
+    removed_from_db = False
+
+    if len(flat_delete_list):
+        waiverdays_to_remove_queryset = Waiverday.objects.filter(
+            reduce(operator.or_, [Q(date__day=x) for x in flat_delete_list]),
+            date__year=year,
+            date__month=month,
+            kid=kid)
+        for waiverday in waiverdays_to_remove_queryset:
+            # Remove the specific kid
+            waiverday.kid.remove(kid)
+
+            # Check if any kids remain
+            if waiverday.kid.exists():
+                waiverday.save()
+            else:
+                waiverday.delete()
+            removed_from_db = True
+
+    written_to_db = False
 
     def save_day(day_to_save, kid):
         success = False
         waiverdays_all = list(Waiverday.objects.all())
         waiverdays_datetimes = [days.date for days in waiverdays_all]
-        if day_to_save.weekday() not in (5,6):
+        if day_to_save.weekday() not in (5, 6):
             if day_to_save in waiverdays_datetimes:
                 old_waiverday = Waiverday.objects.filter(date=day_to_save)[0]
                 old_waiverday.kid.add(kid)
@@ -461,15 +523,14 @@ def additional_waiverdays(days, wishdays=False, kid=None, dishes_this_month=None
         return success
 
     try:
-        for day in flat_list:       
+        for day in flat_list:
             this_day = datetime.date(year, month, day)
-            written_to_db = save_day(this_day, kid)             
-
+            written_to_db = save_day(this_day, kid)
 
     except Exception as e:
         return (f'Failure because of {e}')
 
-    if written_to_db:
+    if written_to_db or removed_from_db:
         return 'success'
     return 'Waiverday(s) already in database'
 
@@ -484,9 +545,8 @@ def get_kid_dates_dict(selected_year, selected_month):
         # Get waiver days for this kid in the selected month
         waiver_days = []
         for waiverday in kid.waiverdaykids.filter(
-            date__year=selected_year, 
-            date__month=selected_month
-        ).order_by('date'):
+                date__year=selected_year,
+                date__month=selected_month).order_by('date'):
             waiver_days.append(waiverday.date.day)
 
         # Format the dates as a string (e.g., "1, 5, 10-15")
@@ -525,22 +585,23 @@ def format_date_ranges(days):
 
     return ", ".join(ranges)
 
+
 def create_styled_pdf(df):
     import pandas as pd
 
     # Dictionary to convert month number to German month name
     month_dict = {
-        1: 'Jänner', 
-        2: 'Februar', 
-        3: 'März', 
-        4: 'April', 
-        5: 'Mai', 
-        6: 'Juni', 
-        7: 'Juli', 
-        8: 'August', 
-        9: 'September', 
-        10: 'Oktober', 
-        11: 'November', 
+        1: 'Jänner',
+        2: 'Februar',
+        3: 'März',
+        4: 'April',
+        5: 'Mai',
+        6: 'Juni',
+        7: 'Juli',
+        8: 'August',
+        9: 'September',
+        10: 'Oktober',
+        11: 'November',
         12: 'Dezember'
     }
 
@@ -564,12 +625,12 @@ def create_styled_pdf(df):
             break
 
     # Clean from the back (end of dataframe)
-    for i in range(len(cleaned_df)-1, -1, -1):
+    for i in range(len(cleaned_df) - 1, -1, -1):
         if cleaned_df.iloc[i]['kid'] == '':
             continue
         else:
             # Found last non-empty kid, keep up to here
-            cleaned_df = cleaned_df.iloc[:i+1]
+            cleaned_df = cleaned_df.iloc[:i + 1]
             break
 
     # Reset index after removing rows
@@ -585,8 +646,6 @@ def create_styled_pdf(df):
     ax.axis('off')
     ax.axis('tight')
 
-
-
     # Convert datetime column to date format for display
     display_df = df.copy()
     if 'date' in df.columns:
@@ -600,10 +659,10 @@ def create_styled_pdf(df):
         max_width = 147  # INCREASE THIS VALUE to delay wrapping (was 60)
     elif row_count > 15:
         font_size = 9
-        max_width = 110   # INCREASE THIS VALUE to delay wrapping (was 70)
+        max_width = 110  # INCREASE THIS VALUE to delay wrapping (was 70)
     else:
         font_size = 10
-        max_width = 100   # INCREASE THIS VALUE to delay wrapping (was 80)
+        max_width = 100  # INCREASE THIS VALUE to delay wrapping (was 80)
     # ================================
 
     # Apply text wrapping to dish column
@@ -612,7 +671,8 @@ def create_styled_pdf(df):
         dish_text = str(display_df.iloc[i, dish_col_index])
         # Only wrap if text is longer than max_width
         if len(dish_text) > max_width:
-            display_df.iloc[i, dish_col_index] = '\n'.join(textwrap.wrap(dish_text, width=max_width))
+            display_df.iloc[i, dish_col_index] = '\n'.join(
+                textwrap.wrap(dish_text, width=max_width))
 
     # Create table data
     table_data = display_df.values
@@ -633,7 +693,8 @@ def create_styled_pdf(df):
     table.set_fontsize(font_size)
 
     # Set column widths - give even more space to the dish column
-    col_widths = [0.09, 0.15, 0.76]  # Adjusted to give more space to dish column
+    col_widths = [0.09, 0.15,
+                  0.76]  # Adjusted to give more space to dish column
     for i, width in enumerate(col_widths):
         if i < 3:  # Always 3 columns
             for row in range(len(df) + 1):  # +1 for header
@@ -683,37 +744,33 @@ def create_styled_pdf(df):
         for row_idx, lines in row_heights.items():
             height_factor = 1 + (lines - 1) * 0.5
             for j in range(3):
-                table[(row_idx, j)].set_height(table[(row_idx, j)].get_height() * height_factor)
+                table[(row_idx, j)].set_height(
+                    table[(row_idx, j)].get_height() * height_factor)
 
     # Scale table to fit the figure
     if row_count > 25:
-        table.scale(1, 1.5)
+        table.scale(1, 1.55)
     elif row_count > 15:
-        table.scale(1, 1.4)
+        table.scale(1, 1.35)
     else:
         table.scale(1, 1.3)
-    
 
     # Move table down to make room for title, but not too far down
     table.set_transform(ax.transAxes)
 
-
-
-
     parot_dict = {
         'purple': '#691367',
-        'light_blue': '#40B3C2', 
+        'light_blue': '#40B3C2',
         'orange': '#FFB203',
         'neon-red': '#EA0A5D'
     }
-
 
     # First create the logo axes with a higher z-order
     organisation_label = "./static/images/kigu_label.png"
     try:
         org_img = plt.imread(organisation_label)
         # Create a new axes for the logo in the top left with a higher z-order
-        org_ax = fig.add_axes([0.49, 0.905, 0.45, 0.10], zorder=2)  
+        org_ax = fig.add_axes([0.51, 0.928, 0.45, 0.10], zorder=2)
         org_ax.imshow(org_img)
         org_ax.axis('off')  # Hide the axes of the logo
     except Exception as e:
@@ -723,42 +780,35 @@ def create_styled_pdf(df):
     parrot_path = "./static/images/stealth_parrot.png"
     try:
         par_img = plt.imread(parrot_path)
-        # Create a new axes for the logo in the top left with a higher z-order
-        par_ax = fig.add_axes([0, 0.91, 0.2, 0.10], zorder=2)  
+        par_ax = fig.add_axes([-0.018, 0.93, 0.2, 0.10], zorder=2)
         par_ax.imshow(par_img)
         par_ax.axis('off')  # Hide the axes of the logo
     except Exception as e:
         print(f"Could not load parrot image: {e}")
 
     # Then add the suptitle with a lower z-order
-    plt.suptitle(f"             Kochliste {month_name} {Setup.year}                                                     ", 
-            fontsize=23,
-            fontweight='bold',
-            y=0.98,
-            x=0.5,
-            color='white',
-            zorder=1,  # Lower z-order so it appears behind the logo
-            bbox=dict(boxstyle='round,pad=0.5', 
-                    facecolor='#681469',
-                    edgecolor=parot_dict['neon-red'],
-                    alpha=0.9,
-                    linewidth=5))
+    plt.suptitle(
+        f"            Kochliste {month_name} {Setup.year}{' ' * (8 - len(month_name))}                                                     ",
+        fontsize=21,
+        fontweight=550,
+        y=1,
+        x=0.5,
+        color='white',
+        zorder=1,  # Lower z-order so it appears behind the logo
+        bbox=dict(boxstyle='round,pad=0.5',
+                  facecolor='#681469',
+                  edgecolor=parot_dict['neon-red'],
+                  alpha=0.9,
+                  linewidth=5))
 
     # Save as PDF with landscape orientation explicitly set
     with PdfPages(pdf_path) as pdf:
         plt.tight_layout(pad=1.2)
-        pdf.savefig(fig, orientation='landscape', bbox_inches='tight', pad_inches=0.4)
+        pdf.savefig(fig,
+                    orientation='landscape',
+                    bbox_inches='tight',
+                    pad_inches=0.4)
 
     plt.close(fig)
 
     return pdf_path
-
-
-
-
-
-
-
-
-    
-    

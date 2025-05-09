@@ -49,7 +49,7 @@ class WaiverdaysForm(forms.Form):
     )
     dates = forms.CharField(
         required=False, 
-        widget=forms.TextInput(attrs={'placeholder': 'e.g.: 1, 10-15, empty to delete current Waiver days'})
+        widget=forms.TextInput(attrs={'placeholder': 'e.g.: 1, 10-15, 18-19'})
     )
     dishes_this_month = forms.IntegerField(
         required=False, 
