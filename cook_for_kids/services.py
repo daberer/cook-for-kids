@@ -709,7 +709,7 @@ def create_styled_pdf(df):
 
 
     # First create the logo axes with a higher z-order
-    organisation_label = "./static/images/kindergruppe_butterbrot.png"
+    organisation_label = "./static/images/kigu_label.png"
     try:
         org_img = plt.imread(organisation_label)
         # Create a new axes for the logo in the top left with a higher z-order
@@ -720,11 +720,11 @@ def create_styled_pdf(df):
         print(f"Could not load organisation label: {e}")
 
     # First create the logo axes with a higher z-order
-    parrot_path = "./static/images/parrot.png"
+    parrot_path = "./static/images/stealth_parrot.png"
     try:
         par_img = plt.imread(parrot_path)
         # Create a new axes for the logo in the top left with a higher z-order
-        par_ax = fig.add_axes([-0.005, 0.91, 0.2, 0.10], zorder=2)  
+        par_ax = fig.add_axes([0, 0.91, 0.2, 0.10], zorder=2)  
         par_ax.imshow(par_img)
         par_ax.axis('off')  # Hide the axes of the logo
     except Exception as e:
