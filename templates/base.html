@@ -2,80 +2,143 @@
 <html>
 
 <head>
-  {% load static %}
-  {# Load the tag library #}
-  {% load bootstrap5 %}
-  {# Load CSS and JavaScript #}
-  {% bootstrap_css %}
-  {% bootstrap_javascript %}
-  <meta charset="utf-8">
-  <title>{% block title %}Django Auth Tutorial{% endblock %}</title>
-  <style>
-    .button-container {
-        width: 20%;
-        margin: 0 auto; /* Center the buttons container */
-    }
-    .btn {
-        width: 100%;
-    }
-    .image-container {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .image-container img {
-        max-width: 70%;
-        height: auto;
-    }
-</style>
-</head>
-<body>
-  <main>
-    {% block content %}
-    {% endblock %}
-  </main>
-  
-<div class="container my-5">
-    <div class="row">
-        <div class="col-12 text-center">
-            <h1 class="mb-4">Cook-for-kids navigate</h1>
-            <div class="button-container d-grid gap-3">
-                <a href="admin/" class="btn btn-primary btn-lg shadow-sm">
-                    <i class="fas fa-user-shield me-2"></i>Admin Page
-                </a>
+    {% load static %}
+    {# Load the tag library #}
+    {% load bootstrap5 %}
+    {# Load CSS and JavaScript #}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <meta charset="utf-8">
+    <title>{% block title %}Django Auth Tutorial{% endblock %}</title>
+    <style>
+        .button-container {
+            width: 20%;
+            margin: 0 auto;
+            /* Center the buttons container */
+        }
 
-                {% if cooking_data.kochdienste < cooking_data.kochtage %}
-                    <button class="btn btn-danger btn-lg position-relative disabled" 
-                            data-bs-toggle="tooltip" 
-                            data-bs-placement="top" 
-                            title="Please add more cooking duties in the setup">
+        .btn {
+            width: 100%;
+        }
+
+        .image-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .image-container img {
+            max-width: 70%;
+            height: auto;
+        }
+
+        /* Shared button styling */
+        .btn {
+            position: relative;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border: none;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease-in-out;
+            z-index: -1;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Admin Button */
+        .btn-admin {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #38a0d6 100%);
+            color: #fff;
+            border-left: 4px solid #0e214a;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Start Button */
+        .btn-start {
+            background: linear-gradient(135deg, #ff5858 0%, #f09819 50%, #ff7e5f 100%);
+            color: #fff;
+            border-left: 4px solid #d44000;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Setup Button */
+        .btn-setup {
+            background: linear-gradient(135deg, #43cea2 0%, #185a9d 50%, #3ab4a6 100%);
+            color: #fff;
+            border-left: 4px solid #106d69;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="mb-4">Cook-for-kids navigate</h1>
+                <div class="button-container d-grid gap-3">
+                    <a href="admin/" class="btn btn-admin btn-lg shadow-sm">
+                        <i class="fas fa-user-shield me-2"></i>Admin Page
+                    </a>
+
+                    {% if cooking_data.kochdienste < cooking_data.kochtage %} <button
+                        class="btn btn-danger btn-lg position-relative disabled" data-bs-toggle="tooltip"
+                        data-bs-placement="top" title="Please add more cooking duties in the setup">
                         <i class="fas fa-utensils me-2"></i>Start
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
                             <i class="fas fa-exclamation-triangle"></i>
                         </span>
-                    </button>
-                    <div class="alert alert-warning mt-2 animate__animated animate__pulse animate__infinite">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        <strong>Not enough cooking duties!</strong> Please add more in the setup.
-                    </div>
-                {% else %}
-                    <a href="start/" class="btn btn-danger btn-lg shadow-sm">
-                        <i class="fas fa-utensils me-2"></i>Start
-                    </a>
-                {% endif %}
+                        </button>
+                        <div class="alert alert-warning mt-2 animate__animated animate__pulse animate__infinite">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>Not enough cooking duties!</strong> Please add more in the setup.
+                        </div>
+                        {% else %}
+                        <a href="start/" class="btn btn-start btn-lg shadow-sm">
+                            <i class="fas fa-utensils me-2"></i>Start
+                        </a>
+                        {% endif %}
 
-                <a href="addholidays/" class="btn btn-success btn-lg shadow-sm">
-                    <i class="fas fa-calendar-plus me-2"></i>Add Holidays
-                </a>
-                <a href="setup-month/" class="btn btn-warning btn-lg shadow-sm">
-                    <i class="fas fa-cog me-2"></i>Setup Month
-                </a>
+                        <a href="setup-month/" class="btn setup btn-lg shadow-sm">
+                            <i class="fas fa-cog me-2"></i>Setup Month
+                        </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
     <div class="image-container">
-      <img src="{% static 'images/pot.png' %}" alt="Pot Image">
+        <img src="{% static 'images/pot.png' %}" alt="Pot Image">
     </div>
-</div>
+    </div>
 </body>
+
 </html>

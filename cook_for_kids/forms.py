@@ -1,6 +1,5 @@
 from django import forms
 from .models import Kid
-import datetime
 from .globals import Setup
 
 year = Setup.year
@@ -38,7 +37,7 @@ class WaiverdaysForm(forms.Form):
     month = forms.ChoiceField(choices=MONTHS, initial=str(month))
     kid = forms.ModelChoiceField(
         queryset=Kid.objects.none(),
-        widget=forms.Select(attrs={'size': 10, 'id': 'id_kid'})  # Ensure it has an ID
+        widget=forms.Select(attrs={'size': 10, 'id': 'id_kid'})
     )
     dish = forms.CharField(
         required=False, 
@@ -49,7 +48,7 @@ class WaiverdaysForm(forms.Form):
     )
     dates = forms.CharField(
         required=False, 
-        widget=forms.TextInput(attrs={'placeholder': 'e.g.: 1, 10-15, 18-19'})
+        widget=forms.TextInput(attrs={'placeholder': 'Sperrtage: e.g., 1, 10-15, 18-19'})
     )
     dishes_this_month = forms.IntegerField(
         required=False, 
@@ -70,8 +69,6 @@ class WaiverdaysForm(forms.Form):
         except Exception as e:
             # Handle database errors gracefully
             pass
-
-
 
 
 class DataframeChoice(forms.Form):

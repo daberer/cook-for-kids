@@ -1,8 +1,9 @@
 from django.shortcuts import render, HttpResponse, redirect
 from . import settings
-from .services import calculate_month, additional_holidays, additional_waiverdays, \
+from .services import calculate_month, add_or_subtract_holidays, additional_waiverdays, \
         get_cooking_schedule, check_correctness_df, optimise, num_days_in_month, \
-        get_kid_dates_dict, create_styled_pdf
+        get_kid_dates_dict, create_styled_pdf, get_holidays_this_month, \
+        validate_holiday_format
 import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
@@ -22,30 +23,31 @@ def home(request):
     return render(request, 'home.html', {'cooking_data': cooking_data})
 
 
-def add_holidays(request):
-    """
-    #
-    """
-    if request.method == 'POST':
-        form = AdditionalHolidaysForm(request.POST)
-        if form.is_valid():
-            dates = form.cleaned_data['dates']
-            state = additional_holidays(dates)
-            return HttpResponse(state)
-        else:
-            print(form.errors.as_data())
-    form = AdditionalHolidaysForm()
-    return render(request, 'additional_holiday_form.html', {
-        'form': form,
-        'month': Setup.month
-    })
-
 
 def setup_month(request):
     """
     #
     """
-    if request.method == 'POST':
+    if request.method == 'POST' and 'holiday_submit' in request.POST:
+        holiday_form = AdditionalHolidaysForm(request.POST)
+        if holiday_form.is_valid():
+            dates = holiday_form.cleaned_data['dates']
+
+            # Validate the format of the dates string
+            is_valid, error_message = validate_holiday_format(dates)
+
+            if is_valid:
+                state = add_or_subtract_holidays(dates)
+                if state.startswith('Success'):
+                    messages.success(request, f"Holidays updated successfully. {state}")
+                else:
+                    messages.error(request, f"Error updating holidays: {state}")
+            else:
+                messages.error(request, f"Invalid date format. {error_message}. Please use format like '1,2,10-15,18-19'")
+        else:
+            messages.error(request, "Invalid form submission. Please check your inputs.")
+        return redirect(setup_month)
+    elif request.method == 'POST':
         form = WaiverdaysForm(request.POST)
         if form.is_valid():
             dates = form.cleaned_data['dates']
@@ -72,11 +74,16 @@ def setup_month(request):
     cooking_data = get_cooking_schedule(Setup.year, Setup.month, num_days)
     kid_dates_dict = get_kid_dates_dict(Setup.year, Setup.month)
     form = WaiverdaysForm()
+
+    holidays = get_holidays_this_month(Setup.year, Setup.month)
+    holiday_form = AdditionalHolidaysForm()
     return render(
         request, 'waiverday_form.html', {
             'form': form,
+            'holiday_form': holiday_form,
             'cooking_data': cooking_data,
-            'kid_dates_dict': kid_dates_dict
+            'kid_dates_dict': kid_dates_dict,
+            'monthly_holidays': holidays
         })
 
 

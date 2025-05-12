@@ -368,46 +368,83 @@ def optimise(dframe):
     return dframe
 
 
-def additional_holidays(days):
+def add_or_subtract_holidays(days):
     """
-    Function that adds new holidays single or in bulk
+    Function that adds or subtracts holidays single or in bulk based on set comparison
     """
     month = Setup.month
     year = Setup.year
-    s_days_array = days.split(',')
-    written_to_db = False
 
-    def save_day(day_to_save):
-        success = False
-        holidays_all = list(Holiday.objects.all())
-        holidays_datetimes = [days.date for days in holidays_all]
-        if day_to_save.weekday() not in (
-                5, 6) and day_to_save not in holidays_datetimes:
-            new_holiday = Holiday(date=day_to_save, text=str(day_to_save))
-            new_holiday.save()
-            success = True
-        return success
+    # Parse the input days into a flat list
+    flat_days = parse_day_ranges(days)
 
-    try:
-        for s_days in s_days_array:
-            if '-' in s_days:
-                s_days = s_days.split('-')
-                days_list = list(range(int(s_days[0]), int(s_days[1]) + 1))
-                for day in days_list:
-                    this_day = datetime.date(year, month, day)
-                    written_to_db = save_day(this_day)
+    # Get the current holidays for this month from the database
+    current_monthly_holidays_in_db = get_holidays_this_month(Setup.year, Setup.month)
+    flat_dates_in_db = parse_day_ranges(current_monthly_holidays_in_db)
 
-            else:
-                day = int(s_days)
-                this_day = datetime.date(year, month, day)
-                written_to_db = save_day(this_day)
+    # Set comparisons to find which days to add and which to remove
+    days_to_add = set(flat_days) - set(flat_dates_in_db)
+    days_to_remove = set(flat_dates_in_db) - set(flat_days)
 
-    except Exception as e:
-        return (f'Failure because of {e}')
+    added_count = 0
+    removed_count = 0
 
-    if written_to_db:
-        return 'success'
-    return 'Holiday(s) were already in database'
+    # Add new holidays
+    for day in days_to_add:
+        this_day = datetime.date(year, month, day)
+        # Skip weekends (5=Saturday, 6=Sunday)
+        if this_day.weekday() not in (5, 6):
+            try:
+                # Check if holiday already exists
+                if not Holiday.objects.filter(date=this_day).exists():
+                    new_holiday = Holiday(date=this_day, text=str(this_day))
+                    new_holiday.save()
+                    added_count += 1
+            except Exception as e:
+                return f'Failure while adding holiday {this_day}: {e}'
+
+    # Remove holidays that are no longer needed
+    for day in days_to_remove:
+        this_day = datetime.date(year, month, day)
+        try:
+            holidays_to_delete = Holiday.objects.filter(date=this_day)
+            delete_count = holidays_to_delete.count()
+            holidays_to_delete.delete()
+            removed_count += delete_count
+        except Exception as e:
+            return f'Failure while removing holiday {this_day}: {e}'
+
+    if added_count > 0 and removed_count > 0:
+        return f'Success: Added {added_count} and removed {removed_count} holidays'
+    elif added_count > 0:
+        return f'Success: Added {added_count} holidays'
+    elif removed_count > 0:
+        return f'Success: Removed {removed_count} holidays'
+    else:
+        return 'No changes were needed to the holidays database'
+
+
+
+def parse_day_ranges(day_string):
+    """
+    Converts a comma-separated string of day numbers and ranges to a flat list of integers.
+
+    Example:
+        >>> parse_day_ranges("1,3-5,7")
+        [1, 3, 4, 5, 7]
+    """
+    day_string = day_string.strip()
+    s_days_array = day_string.split(',')
+
+    def entry_split(day):
+        if '-' in day:
+            sp = day.split('-')
+            return list(range(int(sp[0]), int(sp[1]) + 1))
+        return [int(day)]
+
+    mylists = [entry_split(x) for x in s_days_array]
+    return list(itertools.chain(*mylists))
+
 
 
 def additional_waiverdays(days,
@@ -461,18 +498,9 @@ def additional_waiverdays(days,
 
     num_days = calendar.monthrange(year, month)[1]
     all_days = [day for day in range(1, num_days + 1)]
+    
+    flat_list = parse_day_ranges(days)
 
-    days = days.strip()
-    s_days_array = days.split(',')
-
-    def entry_split(day):
-        if '-' in day:
-            sp = day.split('-')
-            return list(range(int(sp[0]), int(sp[1]) + 1))
-        return [int(day)]
-
-    mylists = [entry_split(x) for x in s_days_array]
-    flat_list = list(itertools.chain(*mylists))
     if wishdays:
         flat_list = list(set(all_days) - set(flat_list))
 
@@ -553,6 +581,39 @@ def get_kid_dates_dict(selected_year, selected_month):
         formatted_dates = format_date_ranges(waiver_days)
         kid_dates_dict[str(kid.id)] = formatted_dates
     return kid_dates_dict
+
+def get_holidays_this_month(selected_year, selected_month):
+    holidays_list = []
+    for holiday in Holiday.objects.filter(date__year=selected_year, date__month=selected_month).order_by('date'):
+        holidays_list.append(holiday.date.day)
+    return format_date_ranges(holidays_list)
+
+
+
+def validate_holiday_format(date_string):
+    """
+    Validates if the input string matches the expected format like "1,2,10-15,18-19"
+    Returns (is_valid, error_message)
+    """
+    if not date_string.strip():
+        return False, "Date input cannot be empty"
+
+    # Split by comma and check each part
+    parts = [part.strip() for part in date_string.split(',')]
+
+    for part in parts:
+        # Check if it's a single number
+        if part.isdigit():
+            continue
+        # Check if it's a range (e.g., 10-15)
+        elif '-' in part:
+            range_parts = part.split('-')
+            if len(range_parts) != 2 or not range_parts[0].isdigit() or not range_parts[1].isdigit():
+                return False, f"Invalid range format: '{part}'. Expected format like '10-15'"
+        else:
+            return False, f"Invalid format: '{part}'. Expected single day (e.g., '5') or range (e.g., '10-15')"
+
+    return True, ""
 
 
 def format_date_ranges(days):
