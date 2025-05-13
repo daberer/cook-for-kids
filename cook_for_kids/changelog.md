@@ -1,8 +1,13 @@
 # Changelog
 
 ## Unreleased Changes
+
+## v2.0
 - Prettify result view
 - Output direct to pdf
+- Add holiday handling to normal setup
+- Set global month and year in App
+- Improve UI
 
 ## v1.1
 - Month setup more informative and improved UI
