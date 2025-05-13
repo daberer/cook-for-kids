@@ -1,6 +1,6 @@
 import calendar
 import datetime
-from .models import Kid, Holiday, Waiverday, Dish
+from .models import Kid, Holiday, Waiverday, Dish, GlobalSettings
 import random, os
 from cook_for_kids.globals import Setup
 import itertools
@@ -162,9 +162,9 @@ def get_cooking_schedule(year, month, num_days):
 
 
 def calculate_month(it=1, test=False):
-    # initializing the year and month
-    year = Setup.year
-    month = Setup.month
+    settings = GlobalSettings.get_current()
+    year = settings.year
+    month = settings.month
     if test:
         year, month = 2025, 5
 
@@ -372,14 +372,15 @@ def add_or_subtract_holidays(days):
     """
     Function that adds or subtracts holidays single or in bulk based on set comparison
     """
-    month = Setup.month
-    year = Setup.year
+    settings = GlobalSettings.get_current()
+    year = settings.year
+    month = settings.month
 
     # Parse the input days into a flat list
     flat_days = parse_day_ranges(days)
 
     # Get the current holidays for this month from the database
-    current_monthly_holidays_in_db = get_holidays_this_month(Setup.year, Setup.month)
+    current_monthly_holidays_in_db = get_holidays_this_month(year, month)
     flat_dates_in_db = parse_day_ranges(current_monthly_holidays_in_db)
 
     # Set comparisons to find which days to add and which to remove
@@ -649,6 +650,9 @@ def format_date_ranges(days):
 
 def create_styled_pdf(df):
     import pandas as pd
+    settings = GlobalSettings.get_current()
+    year = settings.year
+    month = settings.month
 
     # Dictionary to convert month number to German month name
     month_dict = {
@@ -667,10 +671,10 @@ def create_styled_pdf(df):
     }
 
     # Get German month name
-    month_name = month_dict.get(Setup.month, str(Setup.month))
+    month_name = month_dict.get(month, str(month))
 
     # Ensure directory exists
-    pdf_path = f"/home/daberer/Documents/Kochliste/{Setup.year}_{Setup.month}_kochliste.pdf"
+    pdf_path = f"/home/daberer/Documents/Kochliste/{year}_{month}_kochliste.pdf"
     os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
 
     # Remove initial empty kid rows and also from reverse
@@ -849,7 +853,7 @@ def create_styled_pdf(df):
 
     # Then add the suptitle with a lower z-order
     plt.suptitle(
-        f"            Kochliste {month_name} {Setup.year}{' ' * (8 - len(month_name))}                                                     ",
+        f"            Kochliste {month_name} {year}{' ' * (8 - len(month_name))}                                                     ",
         fontsize=21,
         fontweight=550,
         y=1,

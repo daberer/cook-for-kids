@@ -70,6 +70,86 @@
             border-left-color: #dc3545;
             background-color: #fff8f8;
         }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .toast.error {
+            background-color: #f44336;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+
+
+        #year-selector select,
+        #month-selector select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: #fff;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 36px 10px 14px;
+            font-size: 1.1rem;
+            color: #222;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(60, 60, 60, 0.07);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            cursor: pointer;
+            min-width: 100px;
+            position: relative;
+        }
+
+        #year-selector select:focus,
+        #month-selector select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px #2563eb33;
+        }
+
+        #year-selector select:hover,
+        #month-selector select:hover {
+            border-color: #2563eb;
+        }
+
+        #year-selector::after,
+        #month-selector::after {
+            content: '';
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 6px 6px 0 6px;
+            border-style: solid;
+            border-color: #888 transparent transparent transparent;
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            .form-group-container {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            #year-selector select,
+            #month-selector select {
+                width: 100%;
+            }
+        }
+
     </style>
 </head>
 
@@ -107,10 +187,10 @@
         <form action="" method="post">
             {% csrf_token %}
             <div class="form-group-container" style="display: flex; gap: 10px;">
-                <div class="form-group">
+                <div class="form-group" id="year-selector">
                     {{ form.year }}
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="month-selector">
                     {{ form.month }}
                 </div>
             </div>            
@@ -211,7 +291,67 @@
         if (datesField) {
             datesField.value = monthlyHolidays;
         }
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+        // Get the select elements
+        const yearSelect = document.querySelector('#year-selector select');
+        const monthSelect = document.querySelector('#month-selector select');
+
+        // Add change event listeners to both selects
+        [yearSelect, monthSelect].forEach(select => {
+            select.addEventListener('change', function() {
+                // Get the values
+                const year = yearSelect.value;
+                const month = monthSelect.value;
+
+                // Get CSRF token
+                const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+                // Create fetch request (modern alternative to AJAX)
+                fetch('/update_global_date/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `year=${year}&month=${month}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Show success notification
+                    showToast('Date settings updated');
+
+                    // Reload the page after a short delay to allow the toast to be seen
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                })
+                .catch(error => {
+                    showToast('Failed to update settings', 'error');
+                    console.error('Error:', error);
+                });
+            });
+        });
     });
+
+    // Toast notification function in vanilla JS
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(function() {
+            toast.classList.add('show');
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }, 100);
+    }
     </script>
     
 </body>

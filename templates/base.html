@@ -9,8 +9,54 @@
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     <meta charset="utf-8">
-    <title>{% block title %}Django Auth Tutorial{% endblock %}</title>
+    <title>{% block title %}Cook-for-kids{% endblock %}</title>
     <style>
+        /* Global Settings Toolbar */
+        .global-settings-toolbar {
+            background: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+            color: white;
+            padding: 8px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .global-settings-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b, #43cea2, #3ab4a6, #185a9d, #1e3c72);
+            z-index: 10;
+        }
+
+        .settings-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+
+        .settings-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 10px;
+            border-radius: 15px;
+            margin-right: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .settings-value:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
         .button-container {
             width: 20%;
             margin: 0 auto;
@@ -67,34 +113,121 @@
             transform: translateY(1px);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
-
-        /* Admin Button */
-        .btn-admin {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #38a0d6 100%);
+        
+/* Admin Button */
+.btn-admin {
+            background: linear-gradient(135deg, #89a4d5 0%, #5979b1 50%, #38a0d6 100%);
             color: #fff;
-            border-left: 4px solid #0e214a;
+            border-left: 8px solid #0e214a;
             text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
         }
 
         /* Start Button */
-        .btn-start {
-            background: linear-gradient(135deg, #ff5858 0%, #f09819 50%, #ff7e5f 100%);
-            color: #fff;
-            border-left: 4px solid #d44000;
-            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+.btn-start {
+    background: linear-gradient(135deg, #db7e7b 0%, #e39c9c 50%, #cb5050 100%);
+    color: #fff;
+    border-left: 8px solid #b71c1c;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+        
+/* Setup Button */
+.btn-setup {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #f0f0f0 100%);
+    color: #333;
+    border-left: 8px solid #b0b0b0;
+    text-shadow: none;
+}
+
+
+
+
+        /* User section styling */
+        .user-section {
+            display: flex;
+            align-items: center;
         }
 
-        /* Setup Button */
-        .btn-setup {
-            background: linear-gradient(135deg, #43cea2 0%, #185a9d 50%, #3ab4a6 100%);
-            color: #fff;
-            border-left: 4px solid #106d69;
-            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+        .user-greeting {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
         }
+
+        .logout-link, .login-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .logout-link:hover, .login-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .logout-link:active, .login-link:active {
+            transform: translateY(0);
+        }
+
+        /* Font Awesome icon spacing */
+        .fas {
+            margin-right: 5px;
+        }
+
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
+        <!-- Global Settings Toolbar -->
+    <div class="global-settings-toolbar">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Left side: Period info -->
+                <div class="d-flex align-items-center">
+                    <div class="settings-label">Current Period:</div>
+                    <div class="settings-value">
+                        {{ global_month_name }} {{ global_year }}
+                    </div>
+                </div>
+
+                <!-- Right side: User info -->
+                <div class="user-section">
+                    {% if user.is_authenticated %}
+                        <span class="user-greeting">
+                            <i class="fas fa-user-circle me-1"></i>
+                            {{ user.username }}
+                        </span>
+                        <a href="{% url 'logout' %}" class="logout-link">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            Log Out
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="login-link">
+                            <i class="fas fa-sign-in-alt me-1"></i>
+                            Log In
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <main>
         {% block content %}
         {% endblock %}
@@ -109,7 +242,8 @@
                         <i class="fas fa-user-shield me-2"></i>Admin Page
                     </a>
 
-                    {% if cooking_data.kochdienste < cooking_data.kochtage %} <button
+                    {% if cooking_data.kochdienste < cooking_data.kochtage %}
+                    <button
                         class="btn btn-danger btn-lg position-relative disabled" data-bs-toggle="tooltip"
                         data-bs-placement="top" title="Please add more cooking duties in the setup">
                         <i class="fas fa-utensils me-2"></i>Start
@@ -117,20 +251,20 @@
                             class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
                             <i class="fas fa-exclamation-triangle"></i>
                         </span>
-                        </button>
-                        <div class="alert alert-warning mt-2 animate__animated animate__pulse animate__infinite">
-                            <i class="fas fa-exclamation-circle me-2"></i>
-                            <strong>Not enough cooking duties!</strong> Please add more in the setup.
-                        </div>
-                        {% else %}
-                        <a href="start/" class="btn btn-start btn-lg shadow-sm">
-                            <i class="fas fa-utensils me-2"></i>Start
-                        </a>
-                        {% endif %}
+                    </button>
+                    <div class="alert alert-warning mt-2 animate__animated animate__pulse animate__infinite">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Not enough cooking duties!</strong> Please add more in the setup.
+                    </div>
+                    {% else %}
+                    <a href="start/" class="btn btn-start btn-lg shadow-sm">
+                        <i class="fas fa-utensils me-2"></i>Start
+                    </a>
+                    {% endif %}
 
-                        <a href="setup-month/" class="btn setup btn-lg shadow-sm">
-                            <i class="fas fa-cog me-2"></i>Setup Month
-                        </a>
+                    <a href="setup-month/" class="btn btn-setup btn-lg shadow-sm">
+                        <i class="fas fa-cog me-2"></i>Setup Month
+                    </a>
                 </div>
             </div>
         </div>
@@ -138,7 +272,7 @@
     <div class="image-container">
         <img src="{% static 'images/pot.png' %}" alt="Pot Image">
     </div>
-    </div>
 </body>
 
 </html>
+y

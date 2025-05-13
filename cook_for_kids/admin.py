@@ -1,11 +1,16 @@
 from django.contrib import admin
-from .models import Kid, Dish, Holiday, Waiverday
+from .models import Kid, Dish, Holiday, Waiverday, GlobalSettings
 
 @admin.register(Kid)
 class KidAdmin(admin.ModelAdmin):
     list_display = ('name', 'monthly_dishes', 'exempt')
     list_filter = ('exempt',)
     ordering = ('name',)
+
+@admin.register(GlobalSettings)
+class GlobalSettingsAdmin(admin.ModelAdmin):
+    list_year = ('year')
+    list_month = ('month')
 
 @admin.register(Waiverday)
 class WaiverdayAdmin(admin.ModelAdmin):

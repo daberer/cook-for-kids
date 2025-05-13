@@ -1,5 +1,4 @@
 from django.shortcuts import render, HttpResponse, redirect
-from . import settings
 from .services import calculate_month, add_or_subtract_holidays, additional_waiverdays, \
         get_cooking_schedule, check_correctness_df, optimise, num_days_in_month, \
         get_kid_dates_dict, create_styled_pdf, get_holidays_this_month, \
@@ -8,19 +7,21 @@ import json
 from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
 import pandas as pd
 from cook_for_kids.globals import Setup
-from .models import Dish
-
-from django.urls import reverse
-from django.conf import settings
-from django.http import FileResponse, HttpResponseRedirect, JsonResponse
+from .models import Dish, GlobalSettings
+from django.http import FileResponse, JsonResponse
 from django.contrib import messages
-from .globals import Setup
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from .models import GlobalSettings
 
 
 def home(request):
-    num_days = num_days_in_month(Setup.year, Setup.month)
-    cooking_data = get_cooking_schedule(Setup.year, Setup.month, num_days)
-    return render(request, 'home.html', {'cooking_data': cooking_data})
+    settings = GlobalSettings.get_current()
+    year = settings.year
+    month = settings.month
+    num_days = num_days_in_month(year, month)
+    cooking_data = get_cooking_schedule(year, month, num_days)
+    return render(request, 'base.html', {'cooking_data': cooking_data})
 
 
 
@@ -28,6 +29,9 @@ def setup_month(request):
     """
     #
     """
+    settings = GlobalSettings.get_current()
+    year = settings.year
+    month = settings.month
     if request.method == 'POST' and 'holiday_submit' in request.POST:
         holiday_form = AdditionalHolidaysForm(request.POST)
         if holiday_form.is_valid():
@@ -70,12 +74,15 @@ def setup_month(request):
             messages.error(request,
                            "There was an error with your form submission.")
 
-    num_days = num_days_in_month(Setup.year, Setup.month)
-    cooking_data = get_cooking_schedule(Setup.year, Setup.month, num_days)
-    kid_dates_dict = get_kid_dates_dict(Setup.year, Setup.month)
-    form = WaiverdaysForm()
+    num_days = num_days_in_month(year, month)
+    cooking_data = get_cooking_schedule(year, month, num_days)
+    kid_dates_dict = get_kid_dates_dict(year, month)
+    form = WaiverdaysForm(initial={
+        'year': str(year),
+        'month': str(month)
+    })
 
-    holidays = get_holidays_this_month(Setup.year, Setup.month)
+    holidays = get_holidays_this_month(year, month)
     holiday_form = AdditionalHolidaysForm()
     return render(
         request, 'waiverday_form.html', {
@@ -113,6 +120,9 @@ def check_results(request):
 
 
 def brewing_the_kochliste(request):
+    settings = GlobalSettings.get_current()
+    year = settings.year
+    month = settings.month
     if request.method == "POST":
         swap_data = request.POST.get('swapData')
         if swap_data:
@@ -177,7 +187,7 @@ def brewing_the_kochliste(request):
             return FileResponse(open(pdf_path, 'rb'))
 
         else:
-            path_to_csv = f'/home/daberer/Documents/Kochliste/{Setup.year}_{Setup.month}_kochliste.csv'
+            path_to_csv = f'/home/daberer/Documents/Kochliste/{year}_{month}_kochliste.csv'
             df.to_csv(path_to_csv, sep=",", index=False, header=None)
 
             return FileResponse(open(path_to_csv, 'rb'))
@@ -244,3 +254,18 @@ def brewing_the_kochliste(request):
             'resulttable3': df3.to_html(classes="dataframe dthird"),
             'form': form
         })
+
+@require_POST
+def update_global_date(request):
+    year = int(request.POST.get('year'))
+    month = int(request.POST.get('month'))
+
+    settings = GlobalSettings.get_current()
+    settings.year = year
+    settings.month = month
+    settings.save()
+
+    return JsonResponse({
+        'success': True,
+        'should_refresh': settings.year != year or settings.month != month
+    })

@@ -44,6 +44,18 @@ class Waiverday(models.Model):
         return str(self.date)
 
 
+class GlobalSettings(models.Model):
+    year = models.IntegerField()
+    month = models.IntegerField()
+    last_updated = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get_current(cls):
+        settings = cls.objects.first()
+        if not settings:
+            # Create default settings if none exist
+            settings = cls.objects.create(year=2025, month=5)
+        return settings
     
 
 

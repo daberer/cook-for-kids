@@ -25,5 +25,5 @@ urlpatterns = [
     path('start/', views.brewing_the_kochliste, name='brewing'),
     path('setup-month/', views.setup_month, name='setup month'),
     path('check-results/', views.check_results, name='check results'),
-    path("", TemplateView.as_view(template_name="home.html"), name="home"),]
-    
+    path("", TemplateView.as_view(template_name="home.html"), name="home"),
+    path('update_global_date/', views.update_global_date, name='update_global_date')]
