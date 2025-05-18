@@ -4,7 +4,7 @@ from .services import calculate_month, add_or_subtract_holidays, additional_waiv
         get_kid_dates_dict, create_styled_pdf, get_holidays_this_month, \
         validate_holiday_format
 import json
-from .forms import WaiverdaysForm, DataframeChoice, AdditionalHolidaysForm
+from .forms import WaiverdaysForm, AdditionalHolidaysForm
 import pandas as pd
 from cook_for_kids.globals import Setup
 from .models import Dish, GlobalSettings
@@ -103,18 +103,12 @@ def check_results(request):
         else:
             swap_data = json.loads(swap_data)
             # Load your DataFrames here or define them as needed
-            df1 = Setup.df1
-            df2 = Setup.df2
-            df3 = Setup.df3
-            if 'df1' in swap_data:
-                df1.iloc[:, 0] = swap_data['df1']
-            if 'df2' in swap_data:
-                df2.iloc[:, 0] = swap_data['df2']
-            if 'df3' in swap_data:
-                df3.iloc[:, 0] = swap_data['df3']
+            df = Setup.df
+            if 'df' in swap_data:
+                df.iloc[:, 0] = swap_data['df']
             response = {
                 'message':
-                f'for Table 1: {check_correctness_df(df1)}, for Table 2: {check_correctness_df(df2)}, for Table 3: {check_correctness_df(df3)}'
+                f'{check_correctness_df(df)}'
             }
             return JsonResponse(response, status=200)
 
@@ -123,41 +117,20 @@ def brewing_the_kochliste(request):
     settings = GlobalSettings.get_current()
     year = settings.year
     month = settings.month
+    
+    
     if request.method == "POST":
         swap_data = request.POST.get('swapData')
+        # Start with the default dataframe
+        df = Setup.df.copy(deep=True)
+
+        # Apply swap data if present
         if swap_data:
             swap_data = json.loads(swap_data)
-            # Load your DataFrames here or define them as needed
-            df1 = Setup.df1
-            df2 = Setup.df2
-            df3 = Setup.df3
+            if 'df' in swap_data:
+                df.iloc[:, 0] = swap_data['df']
 
-            # Update only the first column with swapped data
-            if 'df1' in swap_data:
-                df1.iloc[:, 0] = swap_data['df1']
-            if 'df2' in swap_data:
-                df2.iloc[:, 0] = swap_data['df2']
-            if 'df3' in swap_data:
-                df3.iloc[:, 0] = swap_data['df3']
-            form = DataframeChoice()
-            return render(
-                request, 'result_form.html', {
-                    'resulttable1': df1.to_html(classes="dataframe dfirst"),
-                    'resulttable2': df2.to_html(classes="dataframe dsecond"),
-                    'resulttable3': df3.to_html(classes="dataframe dthird"),
-                    'form': form
-                })
-
-        form = DataframeChoice(request.POST)
-        if form.is_valid():
-            onetwothree = form.cleaned_data['df_number']
-        if onetwothree == '1':
-            df = Setup.df1.copy(deep=True)
-        elif onetwothree == '2':
-            df = Setup.df2.copy(deep=True)
-        else:
-            df = Setup.df3.copy(deep=True)
-
+        # Process the dataframe
         df['dish'] = ''
         df.rename(columns={df.keys()[0]: "kid"}, inplace=True)
 
@@ -169,9 +142,7 @@ def brewing_the_kochliste(request):
                 if row.name.day_of_week == Setup.excursion_day[1] and Setup.excursion_day[0]:
                     df.at[i, 'dish'] = 'Essen to go (Ausflugsessen)'
                 else:
-                    res = [
-                        x for x in Dish.objects.all() if x.cook.name == row.kid
-                    ]
+                    res = [x for x in Dish.objects.all() if x.cook.name == row.kid]
                     if not len(res):
                         df.at[i, 'dish'] = ''
                     else:
@@ -179,8 +150,9 @@ def brewing_the_kochliste(request):
 
         ####### fill nan values of weekend days and holidays
         df['dish'].fillna('')
-        
+
         df.reset_index(inplace=True, names=['date'])
+
         styled_weasyprint_output = True
         if styled_weasyprint_output:
             pdf_path = create_styled_pdf(df)
@@ -194,7 +166,7 @@ def brewing_the_kochliste(request):
 
     scoreboard = {}
     breakout = 1
-    while len(scoreboard) < 3:
+    while len(scoreboard) < 2:
         res = calculate_month(breakout)
         #ro = check_correctness(res)
         breakout += 1
@@ -209,7 +181,7 @@ def brewing_the_kochliste(request):
     def process_df(scoreboard_data, variant_name):
         # Create initial dataframe
         df = pd.DataFrame(scoreboard_data[1][2],
-                          index=[f'Kids (variant {variant_name})'
+                          index=[f'Kids'
                                  ]).transpose()
         df.index = pd.to_datetime(
             df.index)  #the optimisation requires datetime format
@@ -230,29 +202,21 @@ def brewing_the_kochliste(request):
 
         return df
 
-    # Process each dataframe
-    df1 = process_df(sorted_scoreboard[0], '1')
-    df2 = process_df(sorted_scoreboard[1], '2')
-    df3 = process_df(sorted_scoreboard[2], '3')
+    # Process dataframe
+    df = process_df(sorted_scoreboard[0], '1')
 
     # Print lucky kids
     print(
-        f'Lucky kids: \n {sorted_scoreboard[0][1][1]} \n {sorted_scoreboard[1][1][1]} \n {sorted_scoreboard[2][1][1]}'
+        f'Lucky kids: \n {sorted_scoreboard[0][1][1]}'
     )
 
     # Store dataframes in Setup
-    Setup.df1 = df1
-    Setup.df2 = df2
-    Setup.df3 = df3
+    Setup.df = df
 
     # Create form and render template
-    form = DataframeChoice()
     return render(
         request, 'result_form.html', {
-            'resulttable1': df1.to_html(classes="dataframe dfirst"),
-            'resulttable2': df2.to_html(classes="dataframe dsecond"),
-            'resulttable3': df3.to_html(classes="dataframe dthird"),
-            'form': form
+            'resulttable': df.to_html(classes="dataframe dfirst")
         })
 
 @require_POST

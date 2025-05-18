@@ -83,8 +83,5 @@ class WaiverdaysForm(forms.Form):
             pass
 
 
-class DataframeChoice(forms.Form):
-    df_number = forms.ChoiceField(choices=ONETWOTHREE, initial='1')
-
 class AdditionalHolidaysForm(forms.Form):
     dates = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'e.g.: 1, 10-15'}))

@@ -288,8 +288,8 @@ def check_correctness_df(df):
         k = Kid.objects.get(name=row[0])
         kids = a.kid.all()
         if k in kids:
-            return (f'{row[0]} has a waiverday on {i}!')
-    return 'All good.'
+            return (f'Conflicts: {row[0]} has a waiverday on {i}!')
+    return 'Conflicts: All good.'
 
 
 def optimise(dframe):
