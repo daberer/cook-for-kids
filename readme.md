@@ -7,7 +7,7 @@
 
 ## Overview
 
-![Cook-for-kids Start Page](startpage.png)
+![Cook-for-kids Start Page](workflow.png)
 
 ## Setup Instructions
 
