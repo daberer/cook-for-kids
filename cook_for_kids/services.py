@@ -381,7 +381,9 @@ def add_or_subtract_holidays(days):
 
     # Get the current holidays for this month from the database
     current_monthly_holidays_in_db = get_holidays_this_month(year, month)
-    flat_dates_in_db = parse_day_ranges(current_monthly_holidays_in_db)
+    flat_dates_in_db = []
+    if not current_monthly_holidays_in_db == '':
+        flat_dates_in_db = parse_day_ranges(current_monthly_holidays_in_db)
 
     # Set comparisons to find which days to add and which to remove
     days_to_add = set(flat_days) - set(flat_dates_in_db)
