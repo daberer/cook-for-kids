@@ -6,7 +6,7 @@ class SetupSessionMiddleware:
 
     def __call__(self, request):
         # At the beginning of each request, load from session into globals
-        from globals import Setup  # Import your Setup class
+        from cook_for_kids.globals import Setup  # Import your Setup class
 
         # Initialize session if needed
         if 'setup_df' not in request.session:
