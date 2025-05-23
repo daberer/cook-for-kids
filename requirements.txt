@@ -11,3 +11,4 @@ pandas
 pytest
 pytest-django
 matplotlib
+gunicorn

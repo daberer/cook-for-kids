@@ -36,7 +36,7 @@ DEBUG = env('DEBUG')
 
 
 #ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
-ALLOWED_HOSTS = ['localhost','0.0.0.0'] #setting that works on my windows laptop :)
+ALLOWED_HOSTS = ['localhost','0.0.0.0']
 
 
 # Application definition
@@ -63,6 +63,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # ...
+    'cook_for_kids.globals_middleware.SetupSessionMiddleware'
 ]
 
 ROOT_URLCONF = 'cook_for_kids.urls'
