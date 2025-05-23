@@ -36,8 +36,9 @@ DEBUG = env('DEBUG')
 
 
 #ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
-ALLOWED_HOSTS = ['localhost','0.0.0.0']
+ALLOWED_HOSTS = ['localhost','0.0.0.0', '192.168.0.237']
 
+STATIC_URL = '/static/'
 
 # Application definition
 
