@@ -2,7 +2,6 @@ import calendar
 import datetime
 from .models import Kid, Holiday, Waiverday, Dish, GlobalSettings
 import random, os
-from cook_for_kids.globals import Setup
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -10,6 +9,9 @@ import textwrap
 from django.db.models import Q
 from functools import reduce
 import operator
+from typing import Optional
+import pandas as pd
+from dataclasses import dataclass
 
 
 def evaluate_result(result: dict, all_days: dict,
@@ -292,80 +294,179 @@ def check_correctness_df(df):
     return 'Conflicts: All good.'
 
 
-def optimise(dframe):
-    print('optimising..')
+@dataclass
+class OptimizationMetrics:
+    """Metrics used to evaluate schedule quality."""
+    total_span_days: float
+    kid1_min_rest_days: float
+    kid2_min_rest_days: float
+    kid1_avg_rest_days: float
+    kid2_avg_rest_days: float
 
-    def swap(df, date1, date2):
-        swapkid = df.at[date1, df.columns[0]]
-        df.at[date1, df.columns[0]] = df.at[date2, df.columns[0]]
-        df.at[date2, df.columns[0]] = swapkid
-        return df
+class ScheduleOptimizer:
+    """Optimizes kid schedules by swapping assignments to improve rest day distribution."""
 
-    def rate(d, kid1, kid2):
-        kid1_dates = d[d[d.columns[0]] == kid1].index
-        kid2_dates = d[d[d.columns[0]] == kid2].index
+    def __init__(self, max_swap_attempts: int = 100, optimization_rounds: int = 100):
+        self.max_swap_attempts = max_swap_attempts
+        self.optimization_rounds = optimization_rounds
+        self._waiver_cache = {}
+
+    def optimize_schedule(self, schedule_df: pd.DataFrame, kid_column: str = None) -> pd.DataFrame:
+        """
+        Optimize a schedule by swapping kid assignments to improve rest day distribution.
+
+        Args:
+            schedule_df: DataFrame with dates as index and kid assignments
+            kid_column: Name of column containing kid assignments (defaults to first column)
+
+        Returns:
+            Optimized DataFrame with improved rest day distribution
+        """
+        if schedule_df.empty:
+            return schedule_df
+
+        kid_column = kid_column or schedule_df.columns[0]
+        optimized_schedule = schedule_df.copy()
+
+        print(f"Starting optimization for {len(schedule_df)} schedule entries...")
+
+        for round_num in range(self.optimization_rounds):
+            optimized_schedule = self._run_optimization_round(optimized_schedule, kid_column)
+
+        return optimized_schedule
+
+    def _run_optimization_round(self, schedule_df: pd.DataFrame, kid_column: str) -> pd.DataFrame:
+        """Run a single round of optimization attempts."""
+        current_schedule = schedule_df.copy()
+
+        for date_idx in schedule_df.index:
+            current_kid = schedule_df.at[date_idx, kid_column]
+
+            if pd.isna(current_kid) or not current_kid:
+                continue
+
+            swap_candidate = self._find_valid_swap_candidate(
+                schedule_df, date_idx, current_kid, kid_column
+            )
+
+            if swap_candidate is None:
+                continue
+
+            if self._should_perform_swap(current_schedule, date_idx, swap_candidate, kid_column):
+                current_schedule = self._swap_assignments(
+                    current_schedule, date_idx, swap_candidate, kid_column
+                )
+
+        return current_schedule
+
+    def _find_valid_swap_candidate(self, schedule_df: pd.DataFrame, 
+                                 current_date_idx, current_kid: str, 
+                                 kid_column: str) -> Optional:
+        """Find a valid date to swap with, considering waiver constraints."""
+        for _ in range(self.max_swap_attempts):
+            candidate_idx = random.choice(schedule_df.index)
+            candidate_kid = schedule_df.at[candidate_idx, kid_column]
+
+            if (candidate_kid and 
+                candidate_kid != current_kid and 
+                self._is_swap_allowed(current_date_idx, candidate_idx, current_kid, candidate_kid)):
+                return candidate_idx
+
+        return None
+
+    def _is_swap_allowed(self, date1, date2, kid1: str, kid2: str) -> bool:
+        """Check if swap is allowed based on waiver constraints."""
+        try:
+            # Cache waiver data to avoid repeated database queries
+            waivers_date1 = self._get_waivers_for_date(date1)
+            waivers_date2 = self._get_waivers_for_date(date2)
+
+            # Check if kids can work on swapped dates
+            kid1_obj = self._get_kid_object(kid1)
+            kid2_obj = self._get_kid_object(kid2)
+
+            return (kid2_obj not in waivers_date1 and 
+                    kid1_obj not in waivers_date2)
+
+        except Exception:
+            # If we can't verify constraints, don't allow the swap
+            return False
+
+    def _should_perform_swap(self, schedule_df: pd.DataFrame, date1, date2, kid_column: str) -> bool:
+        """Determine if a swap would improve the schedule quality."""
+        kid1 = schedule_df.at[date1, kid_column]
+        kid2 = schedule_df.at[date2, kid_column]
+
+        current_metrics = self._calculate_metrics(schedule_df, kid1, kid2, kid_column)
+
+        # Create temporary swapped schedule
+        temp_schedule = self._swap_assignments(schedule_df.copy(), date1, date2, kid_column)
+        swapped_metrics = self._calculate_metrics(temp_schedule, kid1, kid2, kid_column)
+
+        return self._is_improvement(current_metrics, swapped_metrics)
+
+    def _calculate_metrics(self, schedule_df: pd.DataFrame, kid1: str, kid2: str, 
+                          kid_column: str) -> OptimizationMetrics:
+        """Calculate optimization metrics for two kids."""
+        kid1_dates = schedule_df[schedule_df[kid_column] == kid1].index
+        kid2_dates = schedule_df[schedule_df[kid_column] == kid2].index
 
         if kid1_dates.empty or kid2_dates.empty:
-            return float('inf'), float('inf'), float('inf'), float(
-                'inf'), float('inf')
+            return OptimizationMetrics(
+                float('inf'), float('inf'), float('inf'), float('inf'), float('inf')
+            )
 
-        min_kid1 = kid1_dates[0].date()
-        max_kid1 = kid1_dates[-1].date()
-        min_kid2 = kid2_dates[0].date()
-        max_kid2 = kid2_dates[-1].date()
+        # Calculate date spans
+        kid1_span = (kid1_dates[-1].date() - kid1_dates[0].date()).days
+        kid2_span = (kid2_dates[-1].date() - kid2_dates[0].date()).days
+        total_span = kid1_span + kid2_span
 
-        max_days_kid1 = (max_kid1 -
-                         min_kid1).days if min_kid1 != max_kid1 else 0
-        max_days_kid2 = (max_kid2 -
-                         min_kid2).days if min_kid2 != max_kid2 else 0
-        sum_max = max_days_kid1 + max_days_kid2
+        # Calculate rest day statistics
+        kid1_rest_days = pd.Series(kid1_dates).diff().dt.days.dropna()
+        kid2_rest_days = pd.Series(kid2_dates).diff().dt.days.dropna()
 
-        kid1_diff = kid1_dates.to_series().diff().dt.days
-        kid1_min_rest_days = kid1_diff.min()
-        kid1_mean_rest_days = kid1_diff.mean()
+        return OptimizationMetrics(
+            total_span_days=total_span,
+            kid1_min_rest_days=kid1_rest_days.min() if not kid1_rest_days.empty else float('inf'),
+            kid2_min_rest_days=kid2_rest_days.min() if not kid2_rest_days.empty else float('inf'),
+            kid1_avg_rest_days=kid1_rest_days.mean() if not kid1_rest_days.empty else float('inf'),
+            kid2_avg_rest_days=kid2_rest_days.mean() if not kid2_rest_days.empty else float('inf')
+        )
 
-        kid2_diff = kid2_dates.to_series().diff().dt.days
-        kid2_min_rest_days = kid2_diff.min()
-        kid2_mean_rest_days = kid2_diff.mean()
+    def _is_improvement(self, current: OptimizationMetrics, proposed: OptimizationMetrics) -> bool:
+        """Check if proposed metrics represent an improvement."""
+        return (proposed.total_span_days >= current.total_span_days and
+                proposed.kid1_min_rest_days >= current.kid1_min_rest_days and
+                proposed.kid2_min_rest_days >= current.kid2_min_rest_days and
+                proposed.kid1_avg_rest_days >= current.kid1_avg_rest_days and
+                proposed.kid2_avg_rest_days >= current.kid2_avg_rest_days)
 
-        return sum_max, kid1_min_rest_days, kid2_min_rest_days, kid1_mean_rest_days, kid2_mean_rest_days
+    def _swap_assignments(self, schedule_df: pd.DataFrame, date1, date2, kid_column: str) -> pd.DataFrame:
+        """Swap kid assignments between two dates."""
+        schedule_df.at[date1, kid_column], schedule_df.at[date2, kid_column] = \
+            schedule_df.at[date2, kid_column], schedule_df.at[date1, kid_column]
+        return schedule_df
 
-    def run_loop(df):
-        for i in df.index:
-            kid1 = df.at[i, df.columns[0]]
+    def _get_waivers_for_date(self, date):
+        """Get waiver information for a date (with caching)."""
+        if date not in self._waiver_cache:
+            try:
+                from cook_for_kids.models import Waiverday  # Import where needed
+                self._waiver_cache[date] = Waiverday.objects.get(date=date).kid.all()
+            except Waiverday.DoesNotExist:
+                self._waiver_cache[date] = []
+        return self._waiver_cache[date]
 
-            if not kid1:
-                continue
+    def _get_kid_object(self, kid_name: str):
+        """Get kid object by name (could also be cached)."""
+        from cook_for_kids.models import Kid  # Import where needed
+        return Kid.objects.get(name=kid_name)
 
-            for _ in range(100):
-                r = df.index[random.randint(0, len(df) - 1)]
-                kid2 = df.at[r, df.columns[0]]
-                if kid1 != kid2 and kid2:
-                    try:
-                        waiverday1 = Waiverday.objects.get(date=i).kid.all()
-                    except Waiverday.DoesNotExist:
-                        waiverday1 = []
-                    try:
-                        waiverday2 = Waiverday.objects.get(date=r).kid.all()
-                    except Waiverday.DoesNotExist:
-                        waiverday2 = []
-
-                    if (Kid.objects.get(name=kid2) not in waiverday1
-                            and Kid.objects.get(name=kid1) not in waiverday2):
-                        break
-            else:
-                continue
-
-            to_1, k1_1, k2_1, km1_1, km2_1 = rate(df, kid1, kid2)
-            kf = swap(df.copy(), i, r)
-            to_2, k1_2, k2_2, km1_2, km2_2 = rate(kf, kid1, kid2)
-            if to_2 >= to_1 and k1_2 >= k1_1 and k2_2 >= k2_1 and km1_2 >= km1_1 and km2_2 >= km2_1:
-                df = kf
-        return df
-
-    for _ in range(50):
-        dframe = run_loop(dframe)
-    return dframe
+# Usage
+def optimize_schedule(schedule_dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Public interface for schedule optimization."""
+    optimizer = ScheduleOptimizer(max_swap_attempts=100, optimization_rounds=50)
+    return optimizer.optimize_schedule(schedule_dataframe)
 
 
 def add_or_subtract_holidays(days):
