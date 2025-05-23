@@ -2,6 +2,12 @@
 
 ## Unreleased Changes
 
+## v2.1
+- Add middleware to handle variables in production
+- Improve result view (reduce options to only one)
+- Improve optimisation function
+- Update readme.md
+
 ## v2.0
 - Prettify result view
 - Output direct to pdf
