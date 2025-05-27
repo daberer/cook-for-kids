@@ -9,6 +9,7 @@
     {% bootstrap_css %}
     {% bootstrap_javascript %}
     <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>{% block title %}Cook-for-kids{% endblock %}</title>
     <style>
         /* Global Settings Toolbar */
@@ -39,6 +40,13 @@
             letter-spacing: 1px;
             margin-right: 8px;
             opacity: 0.8;
+            color: white;
+        }
+        .settings-label {
+            font-weight: 600;
+            margin-right: 8px;
+            font-size: 0.9rem;
+            color: white;
         }
 
         .settings-value {
@@ -113,6 +121,7 @@
             transform: translateY(1px);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
+
         
 /* Admin Button */
 .btn-admin {
@@ -199,7 +208,13 @@
             <div class="d-flex justify-content-between align-items-center">
                 <!-- Left side: Period info -->
                 <div class="d-flex align-items-center">
-                    <div class="settings-label">Current Period:</div>
+                    <!-- Left side: App info -->
+                    <div class="d-flex align-items-center">
+                        <div class="settings-label">
+                            <i class="fas fa-utensils me-2"></i>
+                            Cook for Kids
+                        </div>
+                    </div>
                     <div class="settings-value">
                         {{ global_month_name }} {{ global_year }}
                     </div>

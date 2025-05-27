@@ -13,8 +13,13 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .models import GlobalSettings
+from django.contrib.auth.decorators import login_required
 
 
+def is_staff_user(user):
+    return user.is_staff
+
+@login_required
 def home(request):
     settings = GlobalSettings.get_current()
     year = settings.year
@@ -24,7 +29,7 @@ def home(request):
     return render(request, 'base.html', {'cooking_data': cooking_data})
 
 
-
+@login_required
 def setup_month(request):
     """
     #
@@ -94,6 +99,7 @@ def setup_month(request):
         })
 
 
+@login_required
 def check_results(request):
     if request.method == "POST":
         swap_data = request.POST.get('swapData')
@@ -113,6 +119,7 @@ def check_results(request):
             return JsonResponse(response, status=200)
 
 
+@login_required
 def brewing_the_kochliste(request):
     settings = GlobalSettings.get_current()
     year = settings.year
@@ -220,6 +227,7 @@ def brewing_the_kochliste(request):
         })
 
 @require_POST
+@login_required
 def update_global_date(request):
     year = int(request.POST.get('year'))
     month = int(request.POST.get('month'))

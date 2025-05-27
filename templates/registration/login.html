@@ -1,16 +1,162 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Cook for kids</title>
+    {% load bootstrap5 %}
+    {% bootstrap_css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-{% load bootstrap5 %}
+    <style>
+        /* Global Settings Toolbar */
+        .global-settings-toolbar {
+            background: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+            color: white;
+            padding: 8px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .global-settings-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b, #43cea2, #3ab4a6, #185a9d, #1e3c72);
+            z-index: 10;
+        }
+
+        .settings-label {
+            font-weight: 600;
+            margin-right: 8px;
+            font-size: 0.9rem;
+        }
+
+        .settings-value {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .login-link, .logout-link {
+            color: white;
+            text-decoration: none;
+            padding: 4px 12px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: background 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .login-link:hover, .logout-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .user-greeting {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Login card styling */
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        .login-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 30px;
+        }
 
 
-{% block title %}Login{% endblock %}
 
-{% block content %}
-<h2>Log In</h2>
-<form method="post">
-  {% csrf_token %}
-  {% bootstrap_form form %}
-  {% bootstrap_button button_type="submit" content="OK" %}
-  {% bootstrap_button button_type="reset" content="Cancel" %}
-</form>
-{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Global Settings Toolbar -->
+    <div class="global-settings-toolbar">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Left side: App info -->
+                <div class="d-flex align-items-center">
+                    <div class="settings-label">
+                        <i class="fas fa-utensils me-2"></i>
+                        Cook for Kids
+                    </div>
+                </div>
+
+                <!-- Right side: Login status -->
+                <div class="user-section">
+                    <div class="settings-label">
+                        <i class="fas fa-lock me-1"></i>
+                        Please log in to continue
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card login-card">
+                    <div class="card-header">
+                        <h3 class="text-center">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Cook-for-kids Login
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                {{ form.errors }}
+                            </div>
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            {% bootstrap_form form %}
+                            <div class="d-grid gap-2 mt-3">
+                                {% bootstrap_button button_type="submit" content="<i class='fas fa-sign-in-alt me-2'></i>Login" button_class="btn-primary" %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% bootstrap_javascript %}
+</body>
+</html>
