@@ -196,13 +196,37 @@
         .fas {
             margin-right: 5px;
         }
+        .password-change-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .password-change-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .password-change-link:active {
+            transform: translateY(0);
+        }
 
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-        <!-- Global Settings Toolbar -->
+     
     <div class="global-settings-toolbar">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
@@ -227,6 +251,10 @@
                             <i class="fas fa-user-circle me-1"></i>
                             {{ user.username }}
                         </span>
+                        <a href="{% url 'password_change' %}" class="password-change-link">
+                            <i class="fas fa-key me-1"></i>
+                            Change Password
+                        </a>
                         <a href="{% url 'logout' %}" class="logout-link">
                             <i class="fas fa-sign-out-alt me-1"></i>
                             Log Out
@@ -241,6 +269,7 @@
             </div>
         </div>
     </div>
+
 
 
     <main>

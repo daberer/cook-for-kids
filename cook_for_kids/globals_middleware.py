@@ -20,9 +20,9 @@ class SetupSessionMiddleware:
         if 'setup_optimise' not in request.session:
             # Use existing global value or default
             if hasattr(Setup, 'optimise'):
-                request.session['setup_optimise'] = Setup.optimise
+                request.session['setup_optimise'] = True
             else:
-                request.session['setup_optimise'] = False
+                request.session['setup_optimise'] = True
 
         if 'setup_trial_number' not in request.session:
             # Use existing global value or default
