@@ -12,6 +12,7 @@ import operator
 from typing import Optional
 import pandas as pd
 from dataclasses import dataclass
+from cook_for_kids.settings import PDF_DIR
 
 
 def evaluate_result(result: dict, all_days: dict,
@@ -777,7 +778,7 @@ def create_styled_pdf(df):
     month_name = month_dict.get(month, str(month))
 
     # Ensure directory exists
-    pdf_path = f"/home/daberer/Documents/Kochliste/{year}_{month}_kochliste.pdf"
+    pdf_path = f"{PDF_DIR}/{year}_{month}_kochliste.pdf"
     os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
 
     # Remove initial empty kid rows and also from reverse

@@ -14,7 +14,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .models import GlobalSettings
 from django.contrib.auth.decorators import login_required
-
+from cook_for_kids.settings import PDF_DIR
 
 def is_staff_user(user):
     return user.is_staff
@@ -166,7 +166,7 @@ def brewing_the_kochliste(request):
             return FileResponse(open(pdf_path, 'rb'))
 
         else:
-            path_to_csv = f'/home/daberer/Documents/Kochliste/{year}_{month}_kochliste.csv'
+            path_to_csv = f'{PDF_DIR}/{year}_{month}_kochliste.csv'
             df.to_csv(path_to_csv, sep=",", index=False, header=None)
 
             return FileResponse(open(path_to_csv, 'rb'))
