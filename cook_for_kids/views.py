@@ -1,6 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect
 from .services import calculate_month, add_or_subtract_holidays, additional_waiverdays, \
-        get_cooking_schedule, check_correctness_df, optimize_schedule as optimise, num_days_in_month, \
+        get_cooking_schedule, check_correctness_df, optimise, num_days_in_month, \
         get_kid_dates_dict, create_styled_pdf, get_holidays_this_month, \
         validate_holiday_format
 import json
