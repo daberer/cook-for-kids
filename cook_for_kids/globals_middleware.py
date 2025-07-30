@@ -31,18 +31,11 @@ class SetupSessionMiddleware:
             else:
                 request.session['setup_trial_number'] = 1000
 
-        if 'setup_excursion_day' not in request.session:
-            # Use existing global value or default
-            if hasattr(Setup, 'excursion_day'):
-                request.session['setup_excursion_day'] = Setup.excursion_day
-            else:
-                request.session['setup_excursion_day'] = (True, 1)
 
         # Load from session to globals (this preserves session state across requests)
         Setup.df = pd.DataFrame(request.session['setup_df'])
         Setup.optimise = request.session['setup_optimise']
         Setup.trial_number = request.session['setup_trial_number']
-        Setup.excursion_day = request.session['setup_excursion_day']
 
         # Process the request
         response = self.get_response(request)
@@ -51,6 +44,5 @@ class SetupSessionMiddleware:
         request.session['setup_df'] = Setup.df.to_dict() if Setup.df is not None else {}
         request.session['setup_optimise'] = Setup.optimise
         request.session['setup_trial_number'] = Setup.trial_number
-        request.session['setup_excursion_day'] = Setup.excursion_day
 
         return response

@@ -7,10 +7,22 @@ class KidAdmin(admin.ModelAdmin):
     list_filter = ('exempt',)
     ordering = ('name',)
 
+
 @admin.register(GlobalSettings)
 class GlobalSettingsAdmin(admin.ModelAdmin):
-    list_year = ('year')
-    list_month = ('month')
+    list_display = ('year', 'month', 'excursion_day_name', 'weekly_event_text', 'last_updated')
+    list_filter = ('year', 'month', 'excursion_day')
+    fields = (
+        ('year', 'month'),
+        'excursion_day',
+        'weekly_event_text',
+        'last_updated'
+    )
+    readonly_fields = ('last_updated',)
+
+    def excursion_day_name(self, obj):
+        return obj.excursion_day_name
+    excursion_day_name.short_description = 'Excursion Day'
 
 @admin.register(Waiverday)
 class WaiverdayAdmin(admin.ModelAdmin):

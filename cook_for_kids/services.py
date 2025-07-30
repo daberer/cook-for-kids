@@ -24,37 +24,6 @@ def evaluate_result(result: dict, all_days: dict,
         score += 10
 
     return score
-    """ #check doubles per week
-    week = []
-    for day in result:
-       week.append(result[day])
-       if day.weekday == 5:
-           doubles = len(week) - len(list(set(week)))
-           score += doubles * 5
-           week = []
-
-
-    # sequences
-    li = list(result.values())
-    for i, l in enumerate(li):
-        if i == 0:
-            continue
-
-        if l:
-            if i > 3:
-                if li[i-4] == l :
-                    score += 1
-            if i > 2:
-                if li[i-3] == l:
-                    score += 5
-            if i > 1:
-                if li[i-2] == l:
-                    score += 10
-            if i > 0:
-                if li[i-1] == l:
-                    score += 50
-    return score
-             """
 
 
 def add_or_subtract_dish(c_dict: dict, c_key: str, add=True) -> dict:
@@ -251,8 +220,6 @@ def calculate_month(it=1, test=False):
             for key, value in result_dict.items()
         }
 
-    #TODO: take into account block days, choose lucky parents first and reduce their contingent before running the function (will lead to less results)
-
 
 def check_correctness(df):
     """
@@ -304,15 +271,20 @@ class OptimizationMetrics:
     kid1_avg_rest_days: float
     kid2_avg_rest_days: float
 
+
 class ScheduleOptimizer:
     """Optimizes kid schedules by swapping assignments to improve rest day distribution."""
 
-    def __init__(self, max_swap_attempts: int = 100, optimization_rounds: int = 100):
+    def __init__(self,
+                 max_swap_attempts: int = 100,
+                 optimization_rounds: int = 100):
         self.max_swap_attempts = max_swap_attempts
         self.optimization_rounds = optimization_rounds
         self._waiver_cache = {}
 
-    def optimize_schedule(self, schedule_df: pd.DataFrame, kid_column: str = None) -> pd.DataFrame:
+    def optimize_schedule(self,
+                          schedule_df: pd.DataFrame,
+                          kid_column: str = None) -> pd.DataFrame:
         """
         Optimize a schedule by swapping kid assignments to improve rest day distribution.
 
@@ -329,14 +301,18 @@ class ScheduleOptimizer:
         kid_column = kid_column or schedule_df.columns[0]
         optimized_schedule = schedule_df.copy()
 
-        print(f"Starting optimization for {len(schedule_df)} schedule entries...")
+        print(
+            f"Starting optimization for {len(schedule_df)} schedule entries..."
+        )
 
         for round_num in range(self.optimization_rounds):
-            optimized_schedule = self._run_optimization_round(optimized_schedule, kid_column)
+            optimized_schedule = self._run_optimization_round(
+                optimized_schedule, kid_column)
 
         return optimized_schedule
 
-    def _run_optimization_round(self, schedule_df: pd.DataFrame, kid_column: str) -> pd.DataFrame:
+    def _run_optimization_round(self, schedule_df: pd.DataFrame,
+                                kid_column: str) -> pd.DataFrame:
         """Run a single round of optimization attempts."""
         current_schedule = schedule_df.copy()
 
@@ -347,30 +323,29 @@ class ScheduleOptimizer:
                 continue
 
             swap_candidate = self._find_valid_swap_candidate(
-                current_schedule, date_idx, current_kid, kid_column
-            )
+                current_schedule, date_idx, current_kid, kid_column)
 
             if swap_candidate is None:
                 continue
 
-            if self._should_perform_swap(current_schedule, date_idx, swap_candidate, kid_column):
+            if self._should_perform_swap(current_schedule, date_idx,
+                                         swap_candidate, kid_column):
                 current_schedule = self._swap_assignments(
-                    current_schedule, date_idx, swap_candidate, kid_column
-                )
+                    current_schedule, date_idx, swap_candidate, kid_column)
 
         return current_schedule
 
-    def _find_valid_swap_candidate(self, schedule_df: pd.DataFrame, 
-                                 current_date_idx, current_kid: str, 
-                                 kid_column: str) -> Optional:
+    def _find_valid_swap_candidate(self, schedule_df: pd.DataFrame,
+                                   current_date_idx, current_kid: str,
+                                   kid_column: str) -> Optional:
         """Find a valid date to swap with, considering waiver constraints."""
         for _ in range(self.max_swap_attempts):
             candidate_idx = random.choice(schedule_df.index)
             candidate_kid = schedule_df.at[candidate_idx, kid_column]
 
-            if (candidate_kid and 
-                candidate_kid != current_kid and 
-                self._is_swap_allowed(current_date_idx, candidate_idx, current_kid, candidate_kid)):
+            if (candidate_kid and candidate_kid != current_kid
+                    and self._is_swap_allowed(current_date_idx, candidate_idx,
+                                              current_kid, candidate_kid)):
                 return candidate_idx
 
         return None
@@ -386,36 +361,40 @@ class ScheduleOptimizer:
             kid1_obj = self._get_kid_object(kid1)
             kid2_obj = self._get_kid_object(kid2)
 
-            return (kid2_obj not in waivers_date1 and 
-                    kid1_obj not in waivers_date2)
+            return (kid2_obj not in waivers_date1
+                    and kid1_obj not in waivers_date2)
 
         except Exception:
             # If we can't verify constraints, don't allow the swap
             return False
 
-    def _should_perform_swap(self, schedule_df: pd.DataFrame, date1, date2, kid_column: str) -> bool:
+    def _should_perform_swap(self, schedule_df: pd.DataFrame, date1, date2,
+                             kid_column: str) -> bool:
         """Determine if a swap would improve the schedule quality."""
         kid1 = schedule_df.at[date1, kid_column]
         kid2 = schedule_df.at[date2, kid_column]
 
-        current_metrics = self._calculate_metrics(schedule_df, kid1, kid2, kid_column)
+        current_metrics = self._calculate_metrics(schedule_df, kid1, kid2,
+                                                  kid_column)
 
         # Create temporary swapped schedule
-        temp_schedule = self._swap_assignments(schedule_df.copy(), date1, date2, kid_column)
-        swapped_metrics = self._calculate_metrics(temp_schedule, kid1, kid2, kid_column)
+        temp_schedule = self._swap_assignments(schedule_df.copy(), date1,
+                                               date2, kid_column)
+        swapped_metrics = self._calculate_metrics(temp_schedule, kid1, kid2,
+                                                  kid_column)
 
         return self._is_improvement(current_metrics, swapped_metrics)
 
-    def _calculate_metrics(self, schedule_df: pd.DataFrame, kid1: str, kid2: str, 
-                          kid_column: str) -> OptimizationMetrics:
+    def _calculate_metrics(self, schedule_df: pd.DataFrame, kid1: str,
+                           kid2: str, kid_column: str) -> OptimizationMetrics:
         """Calculate optimization metrics for two kids."""
         kid1_dates = schedule_df[schedule_df[kid_column] == kid1].index
         kid2_dates = schedule_df[schedule_df[kid_column] == kid2].index
 
         if kid1_dates.empty or kid2_dates.empty:
-            return OptimizationMetrics(
-                float('inf'), float('inf'), float('inf'), float('inf'), float('inf')
-            )
+            return OptimizationMetrics(float('inf'), float('inf'),
+                                       float('inf'), float('inf'),
+                                       float('inf'))
 
         # Calculate date spans
         kid1_span = (kid1_dates[-1].date() - kid1_dates[0].date()).days
@@ -426,23 +405,27 @@ class ScheduleOptimizer:
         kid1_rest_days = pd.Series(kid1_dates).diff().dt.days.dropna()
         kid2_rest_days = pd.Series(kid2_dates).diff().dt.days.dropna()
 
-        return OptimizationMetrics(
-            total_span_days=total_span,
-            kid1_min_rest_days=kid1_rest_days.min() if not kid1_rest_days.empty else float('inf'),
-            kid2_min_rest_days=kid2_rest_days.min() if not kid2_rest_days.empty else float('inf'),
-            kid1_avg_rest_days=kid1_rest_days.mean() if not kid1_rest_days.empty else float('inf'),
-            kid2_avg_rest_days=kid2_rest_days.mean() if not kid2_rest_days.empty else float('inf')
-        )
+        return OptimizationMetrics(total_span_days=total_span,
+                                   kid1_min_rest_days=kid1_rest_days.min() if
+                                   not kid1_rest_days.empty else float('inf'),
+                                   kid2_min_rest_days=kid2_rest_days.min() if
+                                   not kid2_rest_days.empty else float('inf'),
+                                   kid1_avg_rest_days=kid1_rest_days.mean() if
+                                   not kid1_rest_days.empty else float('inf'),
+                                   kid2_avg_rest_days=kid2_rest_days.mean() if
+                                   not kid2_rest_days.empty else float('inf'))
 
-    def _is_improvement(self, current: OptimizationMetrics, proposed: OptimizationMetrics) -> bool:
+    def _is_improvement(self, current: OptimizationMetrics,
+                        proposed: OptimizationMetrics) -> bool:
         """Check if proposed metrics represent an improvement."""
-        return (proposed.total_span_days >= current.total_span_days and
-                proposed.kid1_min_rest_days >= current.kid1_min_rest_days and
-                proposed.kid2_min_rest_days >= current.kid2_min_rest_days and
-                proposed.kid1_avg_rest_days >= current.kid1_avg_rest_days and
-                proposed.kid2_avg_rest_days >= current.kid2_avg_rest_days)
+        return (proposed.total_span_days >= current.total_span_days
+                and proposed.kid1_min_rest_days >= current.kid1_min_rest_days
+                and proposed.kid2_min_rest_days >= current.kid2_min_rest_days
+                and proposed.kid1_avg_rest_days >= current.kid1_avg_rest_days
+                and proposed.kid2_avg_rest_days >= current.kid2_avg_rest_days)
 
-    def _swap_assignments(self, schedule_df: pd.DataFrame, date1, date2, kid_column: str) -> pd.DataFrame:
+    def _swap_assignments(self, schedule_df: pd.DataFrame, date1, date2,
+                          kid_column: str) -> pd.DataFrame:
         """Swap kid assignments between two dates."""
         schedule_df.at[date1, kid_column], schedule_df.at[date2, kid_column] = \
             schedule_df.at[date2, kid_column], schedule_df.at[date1, kid_column]
@@ -453,7 +436,8 @@ class ScheduleOptimizer:
         if date not in self._waiver_cache:
             try:
                 from cook_for_kids.models import Waiverday  # Import where needed
-                self._waiver_cache[date] = Waiverday.objects.get(date=date).kid.all()
+                self._waiver_cache[date] = Waiverday.objects.get(
+                    date=date).kid.all()
             except Waiverday.DoesNotExist:
                 self._waiver_cache[date] = []
         return self._waiver_cache[date]
@@ -463,9 +447,11 @@ class ScheduleOptimizer:
         from cook_for_kids.models import Kid  # Import where needed
         return Kid.objects.get(name=kid_name)
 
+
 def optimize_schedule(schedule_dataframe: pd.DataFrame) -> pd.DataFrame:
     """Public interface for schedule optimization."""
-    optimizer = ScheduleOptimizer(max_swap_attempts=100, optimization_rounds=50)
+    optimizer = ScheduleOptimizer(max_swap_attempts=100,
+                                  optimization_rounds=50)
     return optimizer.optimize_schedule(schedule_dataframe)
 
 
@@ -477,7 +463,6 @@ def add_or_subtract_holidays(days):
     year = settings.year
     month = settings.month
 
-    # Parse the input days into a flat list
     flat_days = parse_day_ranges(days)
 
     # Get the current holidays for this month from the database
@@ -528,7 +513,6 @@ def add_or_subtract_holidays(days):
         return 'No changes were needed to the holidays database'
 
 
-
 def parse_day_ranges(day_string):
     """
     Converts a comma-separated string of day numbers and ranges to a flat list of integers.
@@ -538,6 +522,8 @@ def parse_day_ranges(day_string):
         [1, 3, 4, 5, 7]
     """
     day_string = day_string.strip()
+    if not day_string:  # Handle empty string case, remove holidays
+        return []
     s_days_array = day_string.split(',')
 
     def entry_split(day):
@@ -548,7 +534,6 @@ def parse_day_ranges(day_string):
 
     mylists = [entry_split(x) for x in s_days_array]
     return list(itertools.chain(*mylists))
-
 
 
 def additional_waiverdays(days,
@@ -602,7 +587,7 @@ def additional_waiverdays(days,
 
     num_days = calendar.monthrange(year, month)[1]
     all_days = [day for day in range(1, num_days + 1)]
-    
+
     flat_list = parse_day_ranges(days)
 
     if wishdays:
@@ -686,12 +671,14 @@ def get_kid_dates_dict(selected_year, selected_month):
         kid_dates_dict[str(kid.id)] = formatted_dates
     return kid_dates_dict
 
+
 def get_holidays_this_month(selected_year, selected_month):
     holidays_list = []
-    for holiday in Holiday.objects.filter(date__year=selected_year, date__month=selected_month).order_by('date'):
+    for holiday in Holiday.objects.filter(
+            date__year=selected_year,
+            date__month=selected_month).order_by('date'):
         holidays_list.append(holiday.date.day)
     return format_date_ranges(holidays_list)
-
 
 
 def validate_holiday_format(date_string):
@@ -700,7 +687,7 @@ def validate_holiday_format(date_string):
     Returns (is_valid, error_message)
     """
     if not date_string.strip():
-        return False, "Date input cannot be empty"
+        return True, ""  # date_string can be empty to remove all current monthly holidays
 
     # Split by comma and check each part
     parts = [part.strip() for part in date_string.split(',')]
@@ -712,10 +699,26 @@ def validate_holiday_format(date_string):
         # Check if it's a range (e.g., 10-15)
         elif '-' in part:
             range_parts = part.split('-')
-            if len(range_parts) != 2 or not range_parts[0].isdigit() or not range_parts[1].isdigit():
+            if len(range_parts) != 2 or not range_parts[0].isdigit(
+            ) or not range_parts[1].isdigit():
                 return False, f"Invalid range format: '{part}'. Expected format like '10-15'"
         else:
             return False, f"Invalid format: '{part}'. Expected single day (e.g., '5') or range (e.g., '10-15')"
+
+    flat_days = parse_day_ranges(date_string)
+    settings = GlobalSettings.get_current()
+
+    days_in_month = calendar.monthrange(settings.year, settings.month)[1]
+    flat_days_sorted = sorted(flat_days)
+
+    invalid_days = [
+        day for day in flat_days_sorted if day < 1 or day > days_in_month
+    ]
+
+    if invalid_days:
+        invalid_days_str = ', '.join(map(str, invalid_days))
+        return False, f"Invalid day(s): {invalid_days_str}. Days must be between 1 and {days_in_month} \
+            for {calendar.month_name[settings.month]} {settings.year}. Parsed days: {flat_days_sorted}"
 
     return True, ""
 

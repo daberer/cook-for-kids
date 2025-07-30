@@ -44,18 +44,75 @@ class Waiverday(models.Model):
         return str(self.date)
 
 
+
 class GlobalSettings(models.Model):
+    WEEKDAY_CHOICES = [
+        (None, 'No weekly excursion'),
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+    ]
+
+    # Mapping dictionary for easy access
+    WEEKDAY_NAMES = {
+        0: 'Monday',
+        1: 'Tuesday', 
+        2: 'Wednesday',
+        3: 'Thursday',
+        4: 'Friday'
+    }
+
     year = models.IntegerField()
     month = models.IntegerField()
     last_updated = models.DateTimeField(auto_now=True)
+    excursion_day = models.IntegerField(
+        choices=WEEKDAY_CHOICES,
+        null=True,
+        blank=True,
+        default=1,  # Tuesday
+        help_text="Day of the week for excursions (leave empty for no weekly excursion)"
+    )
+    weekly_event_text = models.CharField(
+        max_length=100,
+        default='Essen to go (Ausflugsessen)',
+        help_text="Text to display for weekly excursion meals"
+    )
 
     @classmethod
     def get_current(cls):
         settings = cls.objects.first()
         if not settings:
             # Create default settings if none exist
-            settings = cls.objects.create(year=2025, month=5)
+            settings = cls.objects.create(
+                year=2025, 
+                month=5, 
+                excursion_day=1,
+                weekly_event_text='Essen to go (Ausflugsessen)'
+            )
         return settings
-    
+
+    @property
+    def excursion_day_name(self):
+        """Returns the human-readable name of the excursion day"""
+        if self.excursion_day is None:
+            return 'No weekly excursion'
+        return self.WEEKDAY_NAMES.get(self.excursion_day, 'Unknown')
+
+    @property
+    def has_weekly_excursion(self):
+        """Returns True if a weekly excursion day is set"""
+        return self.excursion_day is not None
+
+    def __str__(self):
+        if self.has_weekly_excursion:
+            return f"Excursions on {self.excursion_day_name}"
+        else:
+            return f"No weekly excursions"
+
+    class Meta:
+        verbose_name = "Global Settings"
+        verbose_name_plural = "Global Settings"
 
 

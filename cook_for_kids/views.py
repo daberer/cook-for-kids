@@ -146,8 +146,10 @@ def brewing_the_kochliste(request):
         df.index = pd.to_datetime(df.index, format='%Y-%m-%d')
         for i, row in df.iterrows():
             if row.kid != '':
-                if row.name.day_of_week == Setup.excursion_day[1] and Setup.excursion_day[0]:
-                    df.at[i, 'dish'] = 'Essen to go (Ausflugsessen)'
+                settings = GlobalSettings.get_current()
+                if (settings.has_weekly_excursion and 
+                    row.name.day_of_week == settings.excursion_day):
+                    df.at[i, 'dish'] = settings.weekly_event_text
                 else:
                     res = [x for x in Dish.objects.all() if x.cook.name == row.kid]
                     if not len(res):
@@ -178,7 +180,7 @@ def brewing_the_kochliste(request):
         #ro = check_correctness(res)
         breakout += 1
         if breakout == Setup.trial_number:
-            return HttpResponse('No three solutions found.')
+            return HttpResponse('No solution found. Check Sperrtage.')
         if res:
             scoreboard[breakout] = [res[0], res[1], res[2]]
 
