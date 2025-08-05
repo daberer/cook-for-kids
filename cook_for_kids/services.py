@@ -451,7 +451,7 @@ class ScheduleOptimizer:
 def optimize_schedule(schedule_dataframe: pd.DataFrame) -> pd.DataFrame:
     """Public interface for schedule optimization."""
     optimizer = ScheduleOptimizer(max_swap_attempts=100,
-                                  optimization_rounds=50)
+                                  optimization_rounds=30)
     return optimizer.optimize_schedule(schedule_dataframe)
 
 
